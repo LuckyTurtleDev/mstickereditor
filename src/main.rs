@@ -4,10 +4,10 @@ use structopt::StructOpt;
 enum Opt {
 	///import Stickerpack from telegram
 	Import {
-		///import file
+		///pack url
 		pack: String,
 
-		///shew debug messages
+		///show debug messages
 		#[structopt(short, long)]
 		debug: bool,
 	},
