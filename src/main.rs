@@ -28,7 +28,10 @@ struct TomlFile {
 
 #[derive(Debug, Deserialize)]
 struct JsonGetMe {
-	ok: bool
+	ok: bool,
+
+	error_code: Option<u32>,
+	description: Option<String>
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
@@ -39,6 +42,13 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.send()?
 		.json()?;
 	println!("{:?}", resp);
+	if !resp.ok {
+		anyhow::bail!(
+			"Request was not successful: {} {}",
+			resp.error_code.unwrap(),
+			resp.description.unwrap()
+		);
+	}
 	Ok(())
 }
 
