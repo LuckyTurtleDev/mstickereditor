@@ -1,7 +1,6 @@
 use anyhow::Context;
 use serde::Deserialize;
-use std::fs;
-use std::process::exit;
+use std::{fs, process::exit};
 use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
@@ -13,23 +12,23 @@ struct OptImport {
 
 	///show debug messages
 	#[structopt(short, long)]
-	debug: bool,
+	debug: bool
 }
 
 #[derive(Debug, StructOpt)]
 enum Opt {
 	///import Stickerpack from telegram
-	Import(OptImport),
+	Import(OptImport)
 }
 
 #[derive(Deserialize)]
 struct TomlFile {
-	telegram_bot_key: String,
+	telegram_bot_key: String
 }
 
 #[derive(Debug, Deserialize)]
 struct JsonGetMe {
-	ok: bool,
+	ok: bool
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
@@ -45,7 +44,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 
 fn main() {
 	let result = match Opt::from_args() {
-		Opt::Import(opt) => import(opt),
+		Opt::Import(opt) => import(opt)
 	};
 	match result {
 		Ok(_) => (),
