@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::fs;
-use structopt::StructOpt;
 use std::process::exit;
+use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
 
@@ -30,8 +30,10 @@ fn import(opt: OptImport) {
 	let toml_file: TomlFile =
 		match toml::from_str(&fs::read_to_string(CONFIG_FILE).expect(&format!("Failed to open file {}", CONFIG_FILE))) {
 			Ok(value) => value,
-			Err(error) => { eprintln!("{}", error);
-			exit(1)},
+			Err(error) => {
+				eprintln!("{}", error);
+				exit(1)
+			}
 		};
 }
 
