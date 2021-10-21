@@ -32,7 +32,7 @@ struct JsonGetMe {
 	ok: bool,
 
 	error_code: Option<u32>,
-	description: Option<String>
+	description: Option<String>,
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
