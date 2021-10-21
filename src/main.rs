@@ -1,3 +1,4 @@
+use anyhow::Context;
 use serde::Deserialize;
 use std::fs;
 use std::process::exit;
@@ -26,20 +27,31 @@ struct TomlFile {
 	telegram_bot_key: String,
 }
 
-fn import(opt: OptImport) {
+#[derive(Debug, Deserialize)]
+struct JsonGetMe {
+	ok: bool,
+}
+
+fn import(opt: OptImport) -> anyhow::Result<()> {
 	let toml_file: TomlFile =
-		match toml::from_str(&fs::read_to_string(CONFIG_FILE).expect(&format!("Failed to open file {}", CONFIG_FILE))) {
-			Ok(value) => value,
-			Err(error) => {
-				eprintln!("{}", error);
-				exit(1)
-			}
-		};
+		toml::from_str(&fs::read_to_string(CONFIG_FILE).context(format!("Failed to open {}", CONFIG_FILE))?)?;
+	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram_bot_key);
+	let resp: JsonGetMe = attohttpc::get(dbg!(format!("{}/getMe", telegram_api_base_url)))
+		.send()?
+		.json()?;
+	println!("{:?}", resp);
+	Ok(())
 }
 
 fn main() {
-	match Opt::from_args() {
+	let result = match Opt::from_args() {
 		Opt::Import(opt) => import(opt),
-	}
-	println!("Hello, world!");
+	};
+	match result {
+		Ok(_) => (),
+		Err(error) => {
+			eprintln!("{:?}", error);
+			exit(1)
+		}
+	};
 }
