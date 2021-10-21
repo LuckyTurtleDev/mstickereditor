@@ -7,3 +7,6 @@ edition = "2018"
 
 [dependencies]
 structopt = "0.3.25"
+serde     = { version = "1.0", features = ["derive"] }
+toml      = "0.5.8"
+teloxide  = "0.5.2"
