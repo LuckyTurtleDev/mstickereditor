@@ -35,21 +35,30 @@ struct JsonGetMe {
 	description: Option<String>,
 }
 
-fn import(opt: OptImport) -> anyhow::Result<()> {
-	let toml_file: TomlFile =
-		toml::from_str(&fs::read_to_string(CONFIG_FILE).context(format!("Failed to open {}", CONFIG_FILE))?)?;
-	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram_bot_key);
-	let resp: JsonGetMe = attohttpc::get(dbg!(format!("{}/getMe", telegram_api_base_url)))
-		.send()?
-		.json()?;
-	println!("{:?}", resp);
+fn check_telegram_resp(resp: JsonGetMe) -> anyhow::Result<()> {
 	if !resp.ok {
 		anyhow::bail!(
 			"Request was not successful: {} {}",
 			resp.error_code.unwrap(),
 			resp.description.unwrap()
-		);
+		)
 	}
+	Ok(())
+}
+
+fn import(opt: OptImport) -> anyhow::Result<()> {
+	let toml_file: TomlFile =
+		toml::from_str(&fs::read_to_string(CONFIG_FILE).context(format!("Failed to open {}", CONFIG_FILE))?)?;
+	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram_bot_key);
+	let resp: JsonGetMe = attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?;
+
+	println!(
+		"{}",
+		attohttpc::get(format!("{}/getStickerSet", telegram_api_base_url))
+			.param("name", opt.pack)
+			.send()?
+			.text()?
+	);
 	Ok(())
 }
 
