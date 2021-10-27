@@ -47,7 +47,7 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	let resp_state: TJsonSatet = serde_json::from_value(resp.clone())?;
 	if !resp_state.ok {
 		anyhow::bail!(
-			"Request was not successful: {} {}",
+			"Telegram request was not successful: {} {}",
 			resp_state.error_code.unwrap(),
 			resp_state.description.unwrap()
 		)
