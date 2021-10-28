@@ -33,8 +33,21 @@ enum Opt {
 }
 
 #[derive(Deserialize)]
+struct TMatrix {
+	homeserver_url: String,
+	user: String,
+	access_token: String,
+}
+
+#[derive(Deserialize)]
+struct TTelegram {
+	bot_key: String,
+}
+
+#[derive(Deserialize)]
 struct TomlFile {
-	telegram_bot_key: String,
+	telegram: TTelegram,
+	matrix: TMatrix,
 }
 
 #[derive(Debug, Deserialize)]
@@ -80,7 +93,7 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 fn import(opt: OptImport) -> anyhow::Result<()> {
 	let toml_file: TomlFile =
 		toml::from_str(&fs::read_to_string(CONFIG_FILE).context(format!("Failed to open {}", CONFIG_FILE))?)?;
-	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram_bot_key);
+	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
 	check_telegram_resp(attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?)?;
 
 	let stickerpack: TJsonStickerPack = serde_json::from_value(check_telegram_resp(
@@ -103,7 +116,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		)?)?;
 		let sticker_image = attohttpc::get(format!(
 			"https://api.telegram.org/file/bot{}/{}",
-			toml_file.telegram_bot_key, sticker_file.file_path
+			toml_file.telegram.bot_key, sticker_file.file_path
 		))
 		.send()?
 		.bytes()?;
