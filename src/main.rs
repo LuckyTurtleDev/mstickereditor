@@ -9,12 +9,21 @@ const CONFIG_FILE: &str = "config.toml";
 
 #[derive(Debug, StructOpt)]
 struct OptImport {
-	///pack url
+	///Pack url
 	pack: String,
 
-	///show debug messages
+	///Save sticker local
 	#[structopt(short, long)]
-	debug: bool,
+	download: bool,
+
+	///Does not upload the sticker to Matrix
+	#[structopt(short = "U", long)]
+	noupload: bool,
+
+	///Do not format the stickers;
+	///The stickers can may not be shown by a matrix client
+	#[structopt(short = "F", long)]
+	noformat: bool,
 }
 
 #[derive(Debug, StructOpt)]
@@ -81,7 +90,9 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.json()?,
 	)?)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
-	fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
+	if opt.download {
+		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
+	}
 	for sticker in stickerpack.stickers {
 		println!("download Sticker {} {}", sticker.emoji, sticker.file_id);
 		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
@@ -90,21 +101,19 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				.send()?
 				.json()?,
 		)?)?;
-		println!(
-			"https://api.telegram.org/file/bot{}/{}",
-			toml_file.telegram_bot_key, sticker_file.file_path
-		);
 		let sticker_image = attohttpc::get(format!(
 			"https://api.telegram.org/file/bot{}/{}",
 			toml_file.telegram_bot_key, sticker_file.file_path
 		))
 		.send()?
 		.bytes()?;
-		fs::write(
-			std::path::Path::new(&format!("./stickers/{}", stickerpack.name))
-				.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
-			sticker_image,
-		)?;
+		if opt.download {
+			fs::write(
+				std::path::Path::new(&format!("./stickers/{}", stickerpack.name))
+					.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
+				sticker_image,
+			)?;
+		}
 	}
 	Ok(())
 }
