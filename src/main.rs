@@ -37,10 +37,22 @@ struct TJsonSatet {
 }
 
 #[derive(Debug, Deserialize)]
+struct TJsonSticker {
+	emoji: String,
+	file_id: String,
+}
+
+#[derive(Debug, Deserialize)]
 struct TJsonStickerPack {
 	name: String,
 	title: String,
 	is_animated: bool,
+	stickers: Vec<TJsonSticker>,
+}
+
+#[derive(Debug, Deserialize)]
+struct TJsonFile {
+	file_path: String,
 }
 
 fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
@@ -68,7 +80,20 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.send()?
 			.json()?,
 	)?)?;
-	println!("{:?}", stickerpack);
+	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
+	for sticker in stickerpack.stickers {
+		println!("download Sticker {} {}", sticker.emoji, sticker.file_id);
+		let tfile: TJsonFile = serde_json::from_value(check_telegram_resp(
+			attohttpc::get(format!("{}/getFile", telegram_api_base_url))
+				.param("file_id", sticker.file_id)
+				.send()?
+				.json()?,
+		)?)?;
+		println!(
+			"https://api.telegram.org/file/bot{}/{}",
+			toml_file.telegram_bot_key, tfile.file_path
+		);
+	}
 	Ok(())
 }
 
