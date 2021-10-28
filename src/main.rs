@@ -81,9 +81,10 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.json()?,
 	)?)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
+	fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	for sticker in stickerpack.stickers {
 		println!("download Sticker {} {}", sticker.emoji, sticker.file_id);
-		let tfile: TJsonFile = serde_json::from_value(check_telegram_resp(
+		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 			attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 				.param("file_id", sticker.file_id)
 				.send()?
@@ -91,8 +92,19 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		)?)?;
 		println!(
 			"https://api.telegram.org/file/bot{}/{}",
-			toml_file.telegram_bot_key, tfile.file_path
+			toml_file.telegram_bot_key, sticker_file.file_path
 		);
+		let sticker_image = attohttpc::get(format!(
+			"https://api.telegram.org/file/bot{}/{}",
+			toml_file.telegram_bot_key, sticker_file.file_path
+		))
+		.send()?
+		.bytes()?;
+		fs::write(
+			std::path::Path::new(&format!("./stickers/{}", stickerpack.name))
+				.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
+			sticker_image,
+		)?;
 	}
 	Ok(())
 }
