@@ -93,7 +93,7 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 fn upload_to_matrix(sticker_image: &Vec<u8>) {
 	let image_checksum = adler::adler32_slice(&sticker_image);
 	println!("{}", image_checksum);
-	let project_dirs = directories::ProjectDirs::from("de","lukas1818","mstickereditor").unwrap();
+	let project_dirs = directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").unwrap();
 	println!("{}", project_dirs.data_dir().to_str().unwrap());
 }
 
