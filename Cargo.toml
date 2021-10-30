@@ -7,9 +7,11 @@ edition = "2018"
 
 [dependencies]
 adler     = "1.0"
+directories = "4.0"
 structopt = "0.3.25"
 serde     = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sled      =  "0.34"
 toml      = "0.5.8"
 attohttpc = { version = "0.18", features = ["compress", "json", "rustls"], default-features = false }
 anyhow    = "1.0"
