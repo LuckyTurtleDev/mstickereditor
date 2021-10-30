@@ -236,6 +236,7 @@ dependencies = [
 name = "mstickereditor"
 version = "0.0.0"
 dependencies = [
+ "adler",
  "anyhow",
  "attohttpc",
  "serde",

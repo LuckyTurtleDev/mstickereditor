@@ -1,3 +1,4 @@
+use adler::adler32_slice;
 use anyhow::anyhow;
 use anyhow::Context;
 use serde::Deserialize;
@@ -90,6 +91,11 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	Ok(serde_json::from_value(resp)?)
 }
 
+fn upload_to_matrix(sticker_image: &Vec<u8>) {
+	let image_checksum = adler::adler32_slice(&sticker_image);
+	println!("{}", image_checksum);
+}
+
 fn import(opt: OptImport) -> anyhow::Result<()> {
 	let toml_file: TomlFile =
 		toml::from_str(&fs::read_to_string(CONFIG_FILE).context(format!("Failed to open {}", CONFIG_FILE))?)?;
@@ -124,8 +130,11 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			fs::write(
 				std::path::Path::new(&format!("./stickers/{}", stickerpack.name))
 					.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
-				sticker_image,
+				&sticker_image,
 			)?;
+		}
+		if !opt.noupload {
+			upload_to_matrix(&sticker_image);
 		}
 	}
 	Ok(())
