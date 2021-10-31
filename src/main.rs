@@ -95,7 +95,7 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	Ok(serde_json::from_value(resp)?)
 }
 
-fn upload_to_matrix(sticker_image: &Vec<u8>) {
+fn upload_to_matrix(sticker_image: &Vec<u8>) -> anyhow::Result<()> {
 	let image_checksum = adler::adler32_slice(&sticker_image);
 	let mut database = std::fs::OpenOptions::new()
 		.write(true)
@@ -103,8 +103,9 @@ fn upload_to_matrix(sticker_image: &Vec<u8>) {
 		.create(true)
 		.open(PROJECT_DIRS.data_dir().join(DATABASE_FILE))
 		.unwrap();
-	database.write_all(b"to append");
+	database.write_all(format!("{} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
 	println!("{}", PROJECT_DIRS.data_dir().to_str().unwrap());
+	Ok(())
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
@@ -149,7 +150,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			)?;
 		}
 		if !opt.noupload {
-			upload_to_matrix(&sticker_image);
+			upload_to_matrix(&sticker_image)?;
 		}
 	}
 	Ok(())
