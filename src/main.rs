@@ -8,7 +8,7 @@ use std::process::exit;
 use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
-const DATABASE_FILE: &str = "uploads.csv";
+const DATABASE_FILE: &str = "uploads";
 static PROJECT_DIRS: once_cell::sync::Lazy<directories::ProjectDirs> =
 	once_cell::sync::Lazy::new(|| directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").unwrap());
 
@@ -95,16 +95,7 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	Ok(serde_json::from_value(resp)?)
 }
 
-fn upload_to_matrix(sticker_image: &Vec<u8>) -> anyhow::Result<()> {
-	let image_checksum = adler::adler32_slice(&sticker_image);
-	let mut database = std::fs::OpenOptions::new()
-		.write(true)
-		.append(true)
-		.create(true)
-		.open(PROJECT_DIRS.data_dir().join(DATABASE_FILE))
-		.unwrap();
-	database.write_all(format!("{} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
-	println!("{}", PROJECT_DIRS.data_dir().to_str().unwrap());
+fn upload_to_matrix(_sticker_image: &Vec<u8>) -> anyhow::Result<()> {
 	Ok(())
 }
 
@@ -128,6 +119,12 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
+	let mut database = std::fs::OpenOptions::new()
+		.write(true)
+		.append(true)
+		.create(true)
+		.open(PROJECT_DIRS.data_dir().join(DATABASE_FILE))
+		.unwrap();
 	for sticker in stickerpack.stickers {
 		println!("download Sticker {} {}", sticker.emoji, sticker.file_id);
 		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
@@ -150,14 +147,20 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			)?;
 		}
 		if !opt.noupload {
+			let image_checksum = adler::adler32_slice(&sticker_image);
 			upload_to_matrix(&sticker_image)?;
+			database.write_all(format!("{:010} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
 		}
 	}
+	database.sync_data()?;
 	Ok(())
 }
 
 fn main() {
-	std::fs::create_dir_all(PROJECT_DIRS.data_dir());
+	std::fs::create_dir_all(PROJECT_DIRS.data_dir()).expect(&format!(
+		"can not create data_dir: {}",
+		PROJECT_DIRS.data_dir().to_str().unwrap()
+	));
 	let result = match Opt::from_args() {
 		Opt::Import(opt) => import(opt),
 	};
