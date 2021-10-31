@@ -2,10 +2,13 @@ use anyhow::anyhow;
 use anyhow::Context;
 use serde::Deserialize;
 use std::fs;
+use std::path::Path;
 use std::process::exit;
 use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
+static PROJECT_DIRS: once_cell::sync::Lazy<directories::ProjectDirs> =
+	once_cell::sync::Lazy::new(|| directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").unwrap());
 
 #[derive(Debug, StructOpt)]
 struct OptImport {
@@ -93,13 +96,16 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 fn upload_to_matrix(sticker_image: &Vec<u8>) {
 	let image_checksum = adler::adler32_slice(&sticker_image);
 	println!("{}", image_checksum);
-	let project_dirs = directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").unwrap();
-	println!("{}", project_dirs.data_dir().to_str().unwrap());
+	println!("{}", PROJECT_DIRS.data_dir().to_str().unwrap());
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
-	let toml_file: TomlFile =
-		toml::from_str(&fs::read_to_string(CONFIG_FILE).context(format!("Failed to open {}", CONFIG_FILE))?)?;
+	let toml_file: TomlFile = toml::from_str(&fs::read_to_string(PROJECT_DIRS.data_dir().join(CONFIG_FILE)).context(
+		format!(
+			"Failed to open {}",
+			PROJECT_DIRS.data_dir().join(CONFIG_FILE).to_str().unwrap()
+		),
+	)?)?;
 	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
 	check_telegram_resp(attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?)?;
 
