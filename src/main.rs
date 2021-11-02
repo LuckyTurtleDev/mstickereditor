@@ -2,6 +2,7 @@ use anyhow::anyhow;
 use anyhow::Context;
 use serde::Deserialize;
 use std::fs;
+use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::process::exit;
@@ -120,6 +121,24 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
+	match File::open(PROJECT_DIRS.data_dir().join(DATABASE_FILE)) {
+		Ok(file) => {
+			use std::io::BufRead;
+			let bufreader = std::io::BufReader::new(file);
+			for line in bufreader.lines() {
+				println!("{}", line?);
+			}
+			Ok(())
+		}
+		Err(error) => {
+			if error.kind() == std::io::ErrorKind::NotFound {
+				print!("databes not found, creat new one");
+				Ok(())
+			} else {
+				Err(error)
+			}
+		}
+	}?;
 	let database = match std::fs::OpenOptions::new()
 		.write(true)
 		.append(true)
