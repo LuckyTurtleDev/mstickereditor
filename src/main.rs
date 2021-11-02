@@ -9,8 +9,9 @@ use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
-static PROJECT_DIRS: once_cell::sync::Lazy<directories::ProjectDirs> =
-	once_cell::sync::Lazy::new(|| directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").unwrap());
+static PROJECT_DIRS: once_cell::sync::Lazy<directories::ProjectDirs> = once_cell::sync::Lazy::new(|| {
+	directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").expect("failde to get project dirs")
+});
 
 #[derive(Debug, StructOpt)]
 struct OptImport {
@@ -119,12 +120,21 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
-	let mut database = std::fs::OpenOptions::new()
+	let database = match std::fs::OpenOptions::new()
 		.write(true)
 		.append(true)
 		.create(true)
 		.open(PROJECT_DIRS.data_dir().join(DATABASE_FILE))
-		.unwrap();
+		.context(format!(
+			"WARNING: Failed to open or create database {}",
+			PROJECT_DIRS.data_dir().join(DATABASE_FILE).to_str().unwrap()
+		)) {
+		Ok(value) => Some(value),
+		Err(error) => {
+			eprintln!("{:?}", error);
+			None
+		}
+	};
 	for sticker in stickerpack.stickers {
 		println!("download Sticker {} {}", sticker.emoji, sticker.file_id);
 		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
@@ -146,13 +156,18 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				&sticker_image,
 			)?;
 		}
-		if !opt.noupload {
+		if !opt.noupload && database.is_some() {
 			let image_checksum = adler::adler32_slice(&sticker_image);
 			upload_to_matrix(&sticker_image)?;
-			database.write_all(format!("{:010} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
+			database
+				.as_ref()
+				.unwrap()
+				.write_all(format!("{:010} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
 		}
 	}
-	database.sync_data()?;
+	if database.is_some() {
+		database.unwrap().sync_data()?
+	}
 	Ok(())
 }
 
