@@ -154,11 +154,17 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			None
 		}
 	};
-	for sticker in stickerpack.stickers {
-		println!("download Sticker {} {}", sticker.emoji, sticker.file_id);
+	for (i, sticker) in stickerpack.stickers.iter().enumerate() {
+		print!(
+			"   download Sticker [{:02}/{:02}] {}   \r",
+			i + 1,
+			stickerpack.stickers.len(),
+			sticker.emoji
+		);
+		std::io::stdout().flush()?;
 		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 			attohttpc::get(format!("{}/getFile", telegram_api_base_url))
-				.param("file_id", sticker.file_id)
+				.param("file_id", &sticker.file_id)
 				.send()?
 				.json()?,
 		)?)?;
@@ -176,6 +182,8 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			)?;
 		}
 		if !opt.noupload && database.is_some() {
+			print!("     upload Sticker\r");
+			std::io::stdout().flush()?;
 			let image_checksum = adler::adler32_slice(&sticker_image);
 			upload_to_matrix(&sticker_image)?;
 			database
@@ -184,6 +192,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				.write_all(format!("{:010} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
 		}
 	}
+	println!("");
 	if database.is_some() {
 		database.unwrap().sync_data()?
 	}
