@@ -157,7 +157,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			stickerpack.stickers.len(),
 			sticker.emoji
 		);
-		std::io::stdout().flush()?;
+		io::stdout().flush()?;
 		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 			attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 				.param("file_id", &sticker.file_id)
@@ -172,7 +172,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.bytes()?;
 		if opt.download {
 			fs::write(
-				std::path::Path::new(&format!("./stickers/{}", stickerpack.name))
+				Path::new(&format!("./stickers/{}", stickerpack.name))
 					.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
 				&sticker_image,
 			)?;
