@@ -1,18 +1,15 @@
-use anyhow::anyhow;
-use anyhow::Context;
+use adler::adler32_slice;
+use anyhow::{anyhow, bail, Context};
+use directories::ProjectDirs;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
-use std::fs;
-use std::fs::File;
-use std::io::Write;
-use std::path::Path;
-use std::process::exit;
+use std::{fs, fs::File, io, io::Write, path::Path, process::exit};
 use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
-static PROJECT_DIRS: once_cell::sync::Lazy<directories::ProjectDirs> = once_cell::sync::Lazy::new(|| {
-	directories::ProjectDirs::from("de", "lukas1818", "mstickereditor").expect("failde to get project dirs")
-});
+static PROJECT_DIRS: Lazy<ProjectDirs> =
+	Lazy::new(|| ProjectDirs::from("de", "lukas1818", "mstickereditor").expect("failed to get project dirs"));
 
 #[derive(Debug, StructOpt)]
 struct OptImport {
@@ -57,6 +54,7 @@ struct TomlFile {
 	matrix: TMatrix,
 }
 
+// TODO rename to Status
 #[derive(Debug, Deserialize)]
 struct TJsonSatet {
 	ok: bool,
@@ -87,11 +85,11 @@ struct TJsonFile {
 fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
 	let resp_state: TJsonSatet = serde_json::from_value(resp.clone())?;
 	if !resp_state.ok {
-		anyhow::bail!(
+		bail!(
 			"Telegram request was not successful: {} {}",
 			resp_state.error_code.unwrap(),
 			resp_state.description.unwrap()
-		)
+		);
 	}
 	let resp = resp.get_mut("result").ok_or_else(|| anyhow!("Missing 'result'"))?.take();
 	Ok(serde_json::from_value(resp)?)
@@ -102,13 +100,15 @@ fn upload_to_matrix(_sticker_image: &Vec<u8>) -> anyhow::Result<()> {
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
-	let toml_file: TomlFile = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).context(
-		format!(
-			"Failed to open {}",
-			PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
-		),
-	)?)?;
-	let telegram_api_base_url: String = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
+	let toml_file: TomlFile = toml::from_str(
+		&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(|| {
+			format!(
+				"Failed to open {}",
+				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
+			)
+		})?,
+	)?;
+	let telegram_api_base_url = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
 	check_telegram_resp(attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?)?;
 
 	let stickerpack: TJsonStickerPack = serde_json::from_value(check_telegram_resp(
@@ -121,33 +121,29 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
-	match File::open(PROJECT_DIRS.data_dir().join(DATABASE_FILE)) {
+	let database_file = PROJECT_DIRS.data_dir().join(DATABASE_FILE);
+	match File::open(&database_file) {
 		Ok(file) => {
 			use std::io::BufRead;
 			let bufreader = std::io::BufReader::new(file);
 			for line in bufreader.lines() {
 				println!("{}", line?);
 			}
-			Ok(())
+		}
+		Err(error) if error.kind() == io::ErrorKind::NotFound => {
+			print!("database not found, creating a new one");
 		}
 		Err(error) => {
-			if error.kind() == std::io::ErrorKind::NotFound {
-				print!("databes not found, creat new one");
-				Ok(())
-			} else {
-				Err(error)
-			}
+			return Err(error.into());
 		}
-	}?;
-	let database = match std::fs::OpenOptions::new()
+	};
+	let database = fs::OpenOptions::new()
 		.write(true)
 		.append(true)
 		.create(true)
-		.open(PROJECT_DIRS.data_dir().join(DATABASE_FILE))
-		.context(format!(
-			"WARNING: Failed to open or create database {}",
-			PROJECT_DIRS.data_dir().join(DATABASE_FILE).to_str().unwrap()
-		)) {
+		.open(&database_file)
+		.with_context(|| format!("WARNING: Failed to open or create database {}", database_file.display()));
+	let database = match database {
 		Ok(value) => Some(value),
 		Err(error) => {
 			eprintln!("{:?}", error);
@@ -176,7 +172,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			)?;
 		}
 		if !opt.noupload && database.is_some() {
-			let image_checksum = adler::adler32_slice(&sticker_image);
+			let image_checksum = adler32_slice(&sticker_image);
 			upload_to_matrix(&sticker_image)?;
 			database
 				.as_ref()
@@ -185,24 +181,22 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		}
 	}
 	if database.is_some() {
-		database.unwrap().sync_data()?
+		database.unwrap().sync_data()?;
 	}
 	Ok(())
 }
 
 fn main() {
-	std::fs::create_dir_all(PROJECT_DIRS.data_dir()).expect(&format!(
-		"can not create data_dir: {}",
-		PROJECT_DIRS.data_dir().to_str().unwrap()
-	));
+	let data_dir = PROJECT_DIRS.data_dir();
+	if let Err(err) = fs::create_dir_all(&data_dir) {
+		eprintln!("Cannot create data dir {}: {}", data_dir.display(), err);
+		exit(1);
+	}
 	let result = match Opt::from_args() {
 		Opt::Import(opt) => import(opt),
 	};
-	match result {
-		Ok(_) => (),
-		Err(error) => {
-			eprintln!("{:?}", error);
-			exit(1)
-		}
-	};
+	if let Err(error) = result {
+		eprintln!("{:?}", error);
+		exit(1);
+	}
 }
