@@ -1,9 +1,10 @@
-use adler::adler32_slice;
 use anyhow::{anyhow, bail, Context};
 use directories::ProjectDirs;
+use generic_array::GenericArray;
 use once_cell::sync::Lazy;
-use serde::Deserialize;
-use std::{fs, fs::File, io, io::Write, path::Path, process::exit};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha512};
+use std::{collections::BTreeMap, fs, fs::File, io, io::Write, path::Path, process::exit};
 use structopt::StructOpt;
 
 const CONFIG_FILE: &str = "config.toml";
@@ -82,6 +83,12 @@ struct TJsonFile {
 	file_path: String,
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+struct HashUrl {
+	hash: GenericArray<u8, <Sha512 as Digest>::OutputSize>,
+	url: String,
+}
+
 fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
 	let resp_state: TJsonSatet = serde_json::from_value(resp.clone())?;
 	if !resp_state.ok {
@@ -96,6 +103,7 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 }
 
 fn upload_to_matrix(_sticker_image: &Vec<u8>) -> anyhow::Result<()> {
+	std::thread::sleep(std::time::Duration::from_millis(500));
 	Ok(())
 }
 
@@ -121,13 +129,25 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
+	let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as Digest>::OutputSize>, String>::new();
 	let database_file = PROJECT_DIRS.data_dir().join(DATABASE_FILE);
 	match File::open(&database_file) {
 		Ok(file) => {
 			use std::io::BufRead;
 			let bufreader = std::io::BufReader::new(file);
-			for line in bufreader.lines() {
-				println!("{}", line?);
+			for (i, line) in bufreader.lines().enumerate() {
+				let hashurl: Result<HashUrl, serde_json::Error> = serde_json::from_str(&line?);
+				match hashurl {
+					Ok(value) => {
+						database_tree.insert(value.hash, value.url);
+					}
+					Err(error) => eprintln!(
+						"Warning: Line {} of Database({}) can not be read: {:?}",
+						i + 1,
+						database_file.as_path().display(),
+						error
+					),
+				};
 			}
 		}
 		Err(error) if error.kind() == io::ErrorKind::NotFound => {
@@ -178,17 +198,27 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			)?;
 		}
 		if !opt.noupload && database.is_some() {
-			print!("     upload Sticker\r");
-			io::stdout().flush()?;
-			let image_checksum = adler32_slice(&sticker_image);
-			upload_to_matrix(&sticker_image)?;
-			database
-				.as_ref()
-				.unwrap()
-				.write_all(format!("{:010} TODO:matirx_upload_url \n", image_checksum).as_bytes())?;
+			let mut hasher = Sha512::new();
+			hasher.update(&sticker_image);
+			let mut hashurl = HashUrl {
+				hash: hasher.finalize(),
+				url: "TODO:matirx_upload_url".to_owned(),
+			};
+			match database_tree.get(&hashurl.hash) {
+				Some(value) => hashurl.url = value.clone(),
+				None => {
+					print!("     upload Sticker\r");
+					io::stdout().flush()?;
+					upload_to_matrix(&sticker_image)?;
+					database
+						.as_ref()
+						.unwrap()
+						.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
+				}
+			}
 		}
 	}
-	println!("");
+	println!();
 	if database.is_some() {
 		database.unwrap().sync_data()?;
 	}
