@@ -102,8 +102,20 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	Ok(serde_json::from_value(resp)?)
 }
 
-fn upload_to_matrix(_sticker_image: &Vec<u8>) -> anyhow::Result<()> {
-	std::thread::sleep(std::time::Duration::from_millis(500));
+fn upload_to_matrix(
+	//TODO reducute params
+	homeserver_url: &String,
+	filename: &String,
+	access_token: &String,
+	content_type: &String,
+	_sticker_image: &Vec<u8>,
+) -> anyhow::Result<()> {
+	let url = format!("{}/_matrix/media/r0/upload", homeserver_url);
+	attohttpc::put(url)
+		.params([("access_token", access_token), ("filename", filename)])
+		.header("Content-Type", content_type)
+		.bytes(_sticker_image)
+		.send(); //TODO
 	Ok(())
 }
 
@@ -209,7 +221,13 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				None => {
 					print!("     upload Sticker\r");
 					io::stdout().flush()?;
-					upload_to_matrix(&sticker_image)?;
+					upload_to_matrix(
+						&toml_file.matrix.homeserver_url,
+						&sticker.file_id,
+						&toml_file.matrix.access_token,
+						&String::new(), //TODO
+						&sticker_image,
+					)?;
 					database
 						.as_ref()
 						.unwrap()
