@@ -214,6 +214,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 						.as_ref()
 						.unwrap()
 						.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
+					database_tree.insert(hashurl.hash, hashurl.url);
 				}
 			}
 		}
