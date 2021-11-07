@@ -202,7 +202,14 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		))
 		.send()?
 		.bytes()?;
+		if !opt.noformat {
+			print!("    convert Sticker\r");
+			io::stdout().flush()?;
+			//todo
+		}
 		if opt.download {
+			print!("       save Sticker\r");
+			io::stdout().flush()?;
 			fs::write(
 				Path::new(&format!("./stickers/{}", stickerpack.name))
 					.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
