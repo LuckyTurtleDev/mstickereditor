@@ -67,8 +67,8 @@ struct TJsonSatet {
 #[derive(Debug)]
 struct MSticker {
 	filename: String,
-	content_type: String,
-	url: String,
+	mimetype: String,
+	uri: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -109,14 +109,9 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	Ok(serde_json::from_value(resp)?)
 }
 
-fn upload_to_matrix(
-	matrix: &Matrix,
-	filename: String,
-	image_data: Vec<u8>,
-	content_type: Option<String>,
-) -> anyhow::Result<()> {
+fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mimetype: Option<String>) -> anyhow::Result<()> {
 	let url = format!("{}/_matrix/media/r0/upload", matrix.homeserver_url);
-	let content_type = match content_type {
+	let mimetype = match mimetype {
 		Some(value) => value,
 		None => format!(
 			"image/{}",
@@ -129,7 +124,7 @@ fn upload_to_matrix(
 	};
 	attohttpc::put(url)
 		.params([("access_token", &matrix.access_token), ("filename", &filename)])
-		.header("Content-Type", content_type)
+		.header("Content-Type", mimetype)
 		.bytes(image_data)
 		.send(); //TODO
 	Ok(())
