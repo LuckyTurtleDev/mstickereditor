@@ -38,7 +38,7 @@ enum Opt {
 }
 
 #[derive(Deserialize)]
-struct TMatrix {
+struct Matrix {
 	homeserver_url: String,
 	user: String,
 	access_token: String,
@@ -52,7 +52,7 @@ struct TTelegram {
 #[derive(Deserialize)]
 struct TomlFile {
 	telegram: TTelegram,
-	matrix: TMatrix,
+	matrix: Matrix,
 }
 
 // TODO rename to Status
@@ -62,6 +62,13 @@ struct TJsonSatet {
 
 	error_code: Option<u32>,
 	description: Option<String>,
+}
+
+#[derive(Debug)]
+struct MSticker {
+	filename: String,
+	content_type: String,
+	url: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -103,18 +110,27 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 }
 
 fn upload_to_matrix(
-	//TODO reducute params
-	homeserver_url: &String,
-	filename: &String,
-	access_token: &String,
-	content_type: &String,
-	_sticker_image: &Vec<u8>,
+	matrix: &Matrix,
+	filename: String,
+	image_data: Vec<u8>,
+	content_type: Option<String>,
 ) -> anyhow::Result<()> {
-	let url = format!("{}/_matrix/media/r0/upload", homeserver_url);
+	let url = format!("{}/_matrix/media/r0/upload", matrix.homeserver_url);
+	let content_type = match content_type {
+		Some(value) => value,
+		None => format!(
+			"image/{}",
+			Path::new(&filename)
+				.extension()
+				.ok_or_else(|| bail!("ERROR: extrcating mimetype from path {}", filename))?
+				.to_str()
+				.ok_or_else(|| bail!("ERROR: converting mimetype to string"))?
+		),
+	};
 	attohttpc::put(url)
-		.params([("access_token", access_token), ("filename", filename)])
+		.params([("access_token", &matrix.access_token), ("filename", &filename)])
 		.header("Content-Type", content_type)
-		.bytes(_sticker_image)
+		.bytes(image_data)
 		.send(); //TODO
 	Ok(())
 }
@@ -228,13 +244,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				None => {
 					print!("     upload Sticker\r");
 					io::stdout().flush()?;
-					upload_to_matrix(
-						&toml_file.matrix.homeserver_url,
-						&sticker.file_id,
-						&toml_file.matrix.access_token,
-						&String::new(), //TODO
-						&sticker_image,
-					)?;
+					upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
 					database
 						.as_ref()
 						.unwrap()
