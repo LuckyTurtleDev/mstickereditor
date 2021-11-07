@@ -122,9 +122,9 @@ fn upload_to_matrix(
 			"image/{}",
 			Path::new(&filename)
 				.extension()
-				.ok_or_else(|| bail!("ERROR: extrcating mimetype from path {}", filename))?
+				.ok_or_else(|| anyhow!("ERROR: extrcating mimetype from path {}", filename))?
 				.to_str()
-				.ok_or_else(|| bail!("ERROR: converting mimetype to string"))?
+				.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
 		),
 	};
 	attohttpc::put(url)
