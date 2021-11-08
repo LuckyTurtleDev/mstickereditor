@@ -96,6 +96,13 @@ struct HashUrl {
 	url: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct MatrixError {
+	errcode: String,
+	error: String,
+	_retry_after_ms: Option<u32>,
+}
+
 fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
 	let resp_state: TJsonSatet = serde_json::from_value(resp.clone())?;
 	if !resp_state.ok {
@@ -122,11 +129,27 @@ fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mime
 				.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
 		),
 	};
-	attohttpc::put(url)
+	let answer = attohttpc::put(url)
 		.params([("access_token", &matrix.access_token), ("filename", &filename)])
 		.header("Content-Type", mimetype)
 		.bytes(image_data)
-		.send(); //TODO
+		.send()?; //TODO
+	if answer.status() != 200 {
+		let status = answer.status();
+		let error: Result<String, anyhow::Error> = {
+			//try:
+			|| {
+				let matrix_error: MatrixError = serde_json::from_value(answer.json()?)?;
+				Ok(format!(": {} {}", matrix_error.errcode, matrix_error.error))
+			}
+		}();
+		bail!(
+			"failed to upload sticker {}: {}{}",
+			filename,
+			status,
+			error.unwrap_or(String::new())
+		);
+	}
 	Ok(())
 }
 
