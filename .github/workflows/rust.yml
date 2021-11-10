@@ -13,6 +13,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install rlottie
         run: |
+          sudo ninja-build
           wget -q "https://github.com/Samsung/rlottie/archive/refs/tags/v$pkgver.tar.gz"
           tar xfz v$pkgver.tar.gz
           cd rlottie-$pkgver
@@ -20,12 +21,12 @@ jobs:
           patch --forward --strip=0 --input=0001-add-missing-include.patch
           mkdir -p build
           cd build
+          sudo ninja install
           cmake .. \
             -G Ninja \
             -DCMAKE_INSTALL_PREFIX=/usr \
             -DCMAKE_BUILD_TYPE=Release
           ninja
-          sudo ninja install
           cd ../..
         env:
           pkgver: "0.2"
