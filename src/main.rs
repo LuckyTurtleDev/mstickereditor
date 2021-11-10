@@ -227,13 +227,12 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.par_iter()
 		.enumerate()
 		.map(|(i, sticker)| {
-			print!(
-				"   download Sticker [{:02}/{:02}] {}   \n",
+			println!(
+				"   download Sticker [{:02}/{:02}] {}   ",
 				i + 1,
 				stickerpack.stickers.len(),
 				sticker.emoji
 			);
-			io::stdout().flush()?;
 			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 					.param("file_id", &sticker.file_id)
@@ -246,35 +245,40 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			))
 			.send()?
 			.bytes()?;
-			if !opt.noformat {
-				print!("    convert Sticker\n");
-				io::stdout().flush()?;
-				if sticker_file.file_path.ends_with(".tgs") {
-					let mut tmp = NamedTempFile::new()?;
-					{
-						let mut out = GzDecoder::new(&mut tmp);
-						out.write_all(&sticker_image)?;
-					}
-					tmp.flush()?;
-
-					let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
-					sticker_image.clear();
-					lottie2gif::convert(
-						sticker,
-						Color {
-							r: 0,
-							g: 0,
-							b: 0,
-							alpha: true,
-						},
-						&mut sticker_image,
-					)?;
-					sticker_file.file_path += ".gif";
+			if !opt.noformat && sticker_file.file_path.ends_with(".tgs") {
+				println!(
+					"    convert Sticker [{:02}/{:02}] {}   ",
+					i + 1,
+					stickerpack.stickers.len(),
+					sticker.emoji
+				);
+				let mut tmp = NamedTempFile::new()?;
+				{
+					let mut out = GzDecoder::new(&mut tmp);
+					out.write_all(&sticker_image)?;
 				}
+				tmp.flush()?;
+				let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+				sticker_image.clear();
+				lottie2gif::convert(
+					sticker,
+					Color {
+						r: 0,
+						g: 0,
+						b: 0,
+						alpha: true,
+					},
+					&mut sticker_image,
+				)?;
+				sticker_file.file_path += ".gif";
 			}
 			if opt.download {
-				print!("       save Sticker\n");
-				io::stdout().flush()?;
+				println!(
+					"       save Sticker [{:02}/{:02}] {}   ",
+					i + 1,
+					stickerpack.stickers.len(),
+					sticker.emoji
+				);
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
