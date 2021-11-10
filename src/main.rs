@@ -14,7 +14,7 @@ use std::{
 	process::exit
 };
 use structopt::StructOpt;
-use tempfile::{tempfile, NamedTempFile};
+use tempfile::NamedTempFile;
 
 const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
