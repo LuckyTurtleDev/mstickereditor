@@ -13,6 +13,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - name: Install rlottie
         run: |
+          sudo apt-get install -y ninja-build
           wget -q "https://github.com/Samsung/rlottie/archive/refs/tags/v$pkgver.tar.gz"
           tar xfz v$pkgver.tar.gz
           cd rlottie-$pkgver
