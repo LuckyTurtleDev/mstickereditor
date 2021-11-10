@@ -1,11 +1,21 @@
 use anyhow::{anyhow, bail, Context};
 use directories::ProjectDirs;
+use flate2::write::GzDecoder;
 use generic_array::GenericArray;
+use lottie2gif::{Animation, Color};
 use once_cell::sync::Lazy;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
-use std::{collections::BTreeMap, fs, fs::File, io, io::Write, path::Path, process::exit};
+use std::{
+	collections::BTreeMap,
+	fs::{self, File},
+	io::{self, BufRead, Write},
+	path::Path,
+	process::exit
+};
 use structopt::StructOpt;
+use tempfile::NamedTempFile;
 
 const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
@@ -14,67 +24,67 @@ static PROJECT_DIRS: Lazy<ProjectDirs> =
 
 #[derive(Debug, StructOpt)]
 struct OptImport {
-	///Pack url
+	/// Pack url
 	pack: String,
 
-	///Save sticker local
+	/// Save sticker local
 	#[structopt(short, long)]
 	download: bool,
 
-	///Does not upload the sticker to Matrix
+	/// Does not upload the sticker to Matrix
 	#[structopt(short = "U", long)]
 	noupload: bool,
 
-	///Do not format the stickers;
-	///The stickers can may not be shown by a matrix client
+	/// Do not format the stickers;
+	/// The stickers can may not be shown by a matrix client
 	#[structopt(short = "F", long)]
-	noformat: bool,
+	noformat: bool
 }
 
 #[derive(Debug, StructOpt)]
 enum Opt {
-	///import Stickerpack from telegram
-	Import(OptImport),
+	/// import Stickerpack from telegram
+	Import(OptImport)
 }
 
 #[derive(Deserialize)]
 struct Matrix {
 	homeserver_url: String,
 	user: String,
-	access_token: String,
+	access_token: String
 }
 
 #[derive(Deserialize)]
 struct TTelegram {
-	bot_key: String,
+	bot_key: String
 }
 
 #[derive(Deserialize)]
 struct TomlFile {
 	telegram: TTelegram,
-	matrix: Matrix,
+	matrix: Matrix
 }
 
 // TODO rename to Status
 #[derive(Debug, Deserialize)]
-struct TJsonSatet {
+struct TJsonState {
 	ok: bool,
 
 	error_code: Option<u32>,
-	description: Option<String>,
+	description: Option<String>
 }
 
 #[derive(Debug)]
 struct MSticker {
 	filename: String,
 	mimetype: String,
-	uri: String,
+	uri: String
 }
 
 #[derive(Debug, Deserialize)]
 struct TJsonSticker {
 	emoji: String,
-	file_id: String,
+	file_id: String
 }
 
 #[derive(Debug, Deserialize)]
@@ -82,29 +92,29 @@ struct TJsonStickerPack {
 	name: String,
 	title: String,
 	is_animated: bool,
-	stickers: Vec<TJsonSticker>,
+	stickers: Vec<TJsonSticker>
 }
 
 #[derive(Debug, Deserialize)]
 struct TJsonFile {
-	file_path: String,
+	file_path: String
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
 	hash: GenericArray<u8, <Sha512 as Digest>::OutputSize>,
-	url: String,
+	url: String
 }
 
 #[derive(Debug, Deserialize)]
 struct MatrixError {
 	errcode: String,
 	error: String,
-	_retry_after_ms: Option<u32>,
+	_retry_after_ms: Option<u32>
 }
 
 fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
-	let resp_state: TJsonSatet = serde_json::from_value(resp.clone())?;
+	let resp_state: TJsonState = serde_json::from_value(resp.clone())?;
 	if !resp_state.ok {
 		bail!(
 			"Telegram request was not successful: {} {}",
@@ -124,10 +134,10 @@ fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mime
 			"image/{}",
 			Path::new(&filename)
 				.extension()
-				.ok_or_else(|| anyhow!("ERROR: extrcating mimetype from path {}", filename))?
+				.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", filename))?
 				.to_str()
 				.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
-		),
+		)
 	};
 	let answer = attohttpc::put(url)
 		.params([("access_token", &matrix.access_token), ("filename", &filename)])
@@ -136,13 +146,10 @@ fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mime
 		.send()?; //TODO
 	if answer.status() != 200 {
 		let status = answer.status();
-		let error: Result<String, anyhow::Error> = {
-			//try:
-			|| {
-				let matrix_error: MatrixError = serde_json::from_value(answer.json()?)?;
-				Ok(format!(": {} {}", matrix_error.errcode, matrix_error.error))
-			}
-		}();
+		let error: Result<String, anyhow::Error> = (|| {
+			let matrix_error: MatrixError = serde_json::from_value(answer.json()?)?;
+			Ok(format!(": {} {}", matrix_error.errcode, matrix_error.error))
+		})();
 		bail!(
 			"failed to upload sticker {}: {}{}",
 			filename,
@@ -160,16 +167,16 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				"Failed to open {}",
 				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
 			)
-		})?,
+		})?
 	)?;
 	let telegram_api_base_url = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
 	check_telegram_resp(attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?)?;
 
 	let stickerpack: TJsonStickerPack = serde_json::from_value(check_telegram_resp(
 		attohttpc::get(format!("{}/getStickerSet", telegram_api_base_url))
-			.param("name", opt.pack)
+			.param("name", &opt.pack)
 			.send()?
-			.json()?,
+			.json()?
 	)?)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.download {
@@ -179,26 +186,25 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	let database_file = PROJECT_DIRS.data_dir().join(DATABASE_FILE);
 	match File::open(&database_file) {
 		Ok(file) => {
-			use std::io::BufRead;
 			let bufreader = std::io::BufReader::new(file);
 			for (i, line) in bufreader.lines().enumerate() {
 				let hashurl: Result<HashUrl, serde_json::Error> = serde_json::from_str(&line?);
 				match hashurl {
 					Ok(value) => {
 						database_tree.insert(value.hash, value.url);
-					}
+					},
 					Err(error) => eprintln!(
 						"Warning: Line {} of Database({}) can not be read: {:?}",
 						i + 1,
 						database_file.as_path().display(),
 						error
-					),
+					)
 				};
 			}
-		}
+		},
 		Err(error) if error.kind() == io::ErrorKind::NotFound => {
 			print!("database not found, creating a new one");
-		}
+		},
 		Err(error) => {
 			return Err(error.into());
 		}
@@ -216,62 +222,93 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			None
 		}
 	};
-	for (i, sticker) in stickerpack.stickers.iter().enumerate() {
-		print!(
-			"   download Sticker [{:02}/{:02}] {}   \r",
-			i + 1,
-			stickerpack.stickers.len(),
-			sticker.emoji
-		);
-		io::stdout().flush()?;
-		let sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
-			attohttpc::get(format!("{}/getFile", telegram_api_base_url))
-				.param("file_id", &sticker.file_id)
-				.send()?
-				.json()?,
-		)?)?;
-		let sticker_image = attohttpc::get(format!(
-			"https://api.telegram.org/file/bot{}/{}",
-			toml_file.telegram.bot_key, sticker_file.file_path
-		))
-		.send()?
-		.bytes()?;
-		if !opt.noformat {
-			print!("    convert Sticker\r");
+	stickerpack
+		.stickers
+		.par_iter()
+		.enumerate()
+		.map(|(i, sticker)| {
+			print!(
+				"   download Sticker [{:02}/{:02}] {}   \n",
+				i + 1,
+				stickerpack.stickers.len(),
+				sticker.emoji
+			);
 			io::stdout().flush()?;
-			//todo
-		}
-		if opt.download {
-			print!("       save Sticker\r");
-			io::stdout().flush()?;
-			fs::write(
-				Path::new(&format!("./stickers/{}", stickerpack.name))
-					.join(std::path::Path::new(&sticker_file.file_path).file_name().unwrap()),
-				&sticker_image,
-			)?;
-		}
-		if !opt.noupload && database.is_some() {
-			let mut hasher = Sha512::new();
-			hasher.update(&sticker_image);
-			let mut hashurl = HashUrl {
-				hash: hasher.finalize(),
-				url: "TODO:matirx_upload_url".to_owned(),
-			};
-			match database_tree.get(&hashurl.hash) {
-				Some(value) => hashurl.url = value.clone(),
-				None => {
-					print!("     upload Sticker\r");
-					io::stdout().flush()?;
-					upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
-					database
-						.as_ref()
-						.unwrap()
-						.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
-					database_tree.insert(hashurl.hash, hashurl.url);
+			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
+				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
+					.param("file_id", &sticker.file_id)
+					.send()?
+					.json()?
+			)?)?;
+			let mut sticker_image = attohttpc::get(format!(
+				"https://api.telegram.org/file/bot{}/{}",
+				toml_file.telegram.bot_key, sticker_file.file_path
+			))
+			.send()?
+			.bytes()?;
+			if !opt.noformat {
+				print!("    convert Sticker\n");
+				io::stdout().flush()?;
+				if sticker_file.file_path.ends_with(".tgs") {
+					let mut tmp = NamedTempFile::new()?;
+					{
+						let mut out = GzDecoder::new(&mut tmp);
+						out.write_all(&sticker_image)?;
+					}
+					tmp.flush()?;
+
+					let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+					sticker_image.clear();
+					lottie2gif::convert(
+						sticker,
+						Color {
+							r: 0,
+							g: 0,
+							b: 0,
+							alpha: true
+						},
+						&mut sticker_image
+					)?;
+					sticker_file.file_path += ".gif";
 				}
 			}
-		}
-	}
+			if opt.download {
+				print!("       save Sticker\n");
+				io::stdout().flush()?;
+				let file_path: &Path = sticker_file.file_path.as_ref();
+				fs::write(
+					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
+					&sticker_image
+				)?;
+			}
+			/*if !opt.noupload && database.is_some() {
+				let mut hasher = Sha512::new();
+				hasher.update(&sticker_image);
+				let mut hashurl = HashUrl {
+					hash: hasher.finalize(),
+					url: "TODO:matrix_upload_url".to_owned()
+				};
+				match database_tree.get(&hashurl.hash) {
+					Some(value) => hashurl.url = value.clone(),
+					None => {
+						print!("     upload Sticker\n");
+						io::stdout().flush()?;
+						upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
+						database
+							.as_ref()
+							.unwrap()
+							.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
+						database_tree.insert(hashurl.hash, hashurl.url);
+					}
+				}
+			}*/
+			Ok(())
+		})
+		.for_each(|res: anyhow::Result<()>| {
+			if let Err(err) = res {
+				eprintln!("ERROR: {:?}", err);
+			}
+		});
 	println!();
 	if database.is_some() {
 		database.unwrap().sync_data()?;
@@ -286,7 +323,7 @@ fn main() {
 		exit(1);
 	}
 	let result = match Opt::from_args() {
-		Opt::Import(opt) => import(opt),
+		Opt::Import(opt) => import(opt)
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);
