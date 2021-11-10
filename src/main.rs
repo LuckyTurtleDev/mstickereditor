@@ -2,6 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use directories::ProjectDirs;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
+use indicatif::ProgressIterator;
 use lottie2gif::{Animation, Color};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
@@ -222,17 +223,15 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			None
 		},
 	};
+
+	use indicatif::ParallelProgressIterator;
+	use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 	stickerpack
 		.stickers
 		.par_iter()
+		.progress()
 		.enumerate()
 		.map(|(i, sticker)| {
-			println!(
-				"   download Sticker [{:02}/{:02}] {}   ",
-				i + 1,
-				stickerpack.stickers.len(),
-				sticker.emoji
-			);
 			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 					.param("file_id", &sticker.file_id)
@@ -246,12 +245,6 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.send()?
 			.bytes()?;
 			if !opt.noformat && sticker_file.file_path.ends_with(".tgs") {
-				println!(
-					"    convert Sticker [{:02}/{:02}] {}   ",
-					i + 1,
-					stickerpack.stickers.len(),
-					sticker.emoji
-				);
 				let mut tmp = NamedTempFile::new()?;
 				{
 					let mut out = GzDecoder::new(&mut tmp);
@@ -273,12 +266,6 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				sticker_file.file_path += ".gif";
 			}
 			if opt.download {
-				println!(
-					"       save Sticker [{:02}/{:02}] {}   ",
-					i + 1,
-					stickerpack.stickers.len(),
-					sticker.emoji
-				);
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
