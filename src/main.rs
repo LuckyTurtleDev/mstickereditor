@@ -4,6 +4,7 @@ use flate2::write::GzDecoder;
 use generic_array::GenericArray;
 use lottie2gif::{Animation, Color};
 use once_cell::sync::Lazy;
+use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
 use std::{
@@ -173,7 +174,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 
 	let stickerpack: TJsonStickerPack = serde_json::from_value(check_telegram_resp(
 		attohttpc::get(format!("{}/getStickerSet", telegram_api_base_url))
-			.param("name", opt.pack)
+			.param("name", &opt.pack)
 			.send()?
 			.json()?
 	)?)?;
@@ -221,83 +222,93 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			None
 		}
 	};
-	for (i, sticker) in stickerpack.stickers.iter().enumerate() {
-		print!(
-			"   download Sticker [{:02}/{:02}] {}   \r",
-			i + 1,
-			stickerpack.stickers.len(),
-			sticker.emoji
-		);
-		io::stdout().flush()?;
-		let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
-			attohttpc::get(format!("{}/getFile", telegram_api_base_url))
-				.param("file_id", &sticker.file_id)
-				.send()?
-				.json()?
-		)?)?;
-		let mut sticker_image = attohttpc::get(format!(
-			"https://api.telegram.org/file/bot{}/{}",
-			toml_file.telegram.bot_key, sticker_file.file_path
-		))
-		.send()?
-		.bytes()?;
-		if !opt.noformat {
-			print!("    convert Sticker\r");
+	stickerpack
+		.stickers
+		.par_iter()
+		.enumerate()
+		.map(|(i, sticker)| {
+			print!(
+				"   download Sticker [{:02}/{:02}] {}   \n",
+				i + 1,
+				stickerpack.stickers.len(),
+				sticker.emoji
+			);
 			io::stdout().flush()?;
-			if sticker_file.file_path.ends_with(".tgs") {
-				let mut tmp = NamedTempFile::new()?;
-				{
-					let mut out = GzDecoder::new(&mut tmp);
-					out.write_all(&sticker_image)?;
-				}
-				tmp.flush()?;
+			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
+				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
+					.param("file_id", &sticker.file_id)
+					.send()?
+					.json()?
+			)?)?;
+			let mut sticker_image = attohttpc::get(format!(
+				"https://api.telegram.org/file/bot{}/{}",
+				toml_file.telegram.bot_key, sticker_file.file_path
+			))
+			.send()?
+			.bytes()?;
+			if !opt.noformat {
+				print!("    convert Sticker\n");
+				io::stdout().flush()?;
+				if sticker_file.file_path.ends_with(".tgs") {
+					let mut tmp = NamedTempFile::new()?;
+					{
+						let mut out = GzDecoder::new(&mut tmp);
+						out.write_all(&sticker_image)?;
+					}
+					tmp.flush()?;
 
-				let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
-				sticker_image.clear();
-				lottie2gif::convert(
-					sticker,
-					Color {
-						r: 0,
-						g: 0,
-						b: 0,
-						alpha: true
-					},
-					&mut sticker_image
-				)?;
-				sticker_file.file_path += ".gif";
-			}
-		}
-		if opt.download {
-			print!("       save Sticker\r");
-			io::stdout().flush()?;
-			let file_path: &Path = sticker_file.file_path.as_ref();
-			fs::write(
-				Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
-				&sticker_image
-			)?;
-		}
-		if !opt.noupload && database.is_some() {
-			let mut hasher = Sha512::new();
-			hasher.update(&sticker_image);
-			let mut hashurl = HashUrl {
-				hash: hasher.finalize(),
-				url: "TODO:matrix_upload_url".to_owned()
-			};
-			match database_tree.get(&hashurl.hash) {
-				Some(value) => hashurl.url = value.clone(),
-				None => {
-					print!("     upload Sticker\r");
-					io::stdout().flush()?;
-					upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
-					database
-						.as_ref()
-						.unwrap()
-						.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
-					database_tree.insert(hashurl.hash, hashurl.url);
+					let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+					sticker_image.clear();
+					lottie2gif::convert(
+						sticker,
+						Color {
+							r: 0,
+							g: 0,
+							b: 0,
+							alpha: true
+						},
+						&mut sticker_image
+					)?;
+					sticker_file.file_path += ".gif";
 				}
 			}
-		}
-	}
+			if opt.download {
+				print!("       save Sticker\n");
+				io::stdout().flush()?;
+				let file_path: &Path = sticker_file.file_path.as_ref();
+				fs::write(
+					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
+					&sticker_image
+				)?;
+			}
+			/*if !opt.noupload && database.is_some() {
+				let mut hasher = Sha512::new();
+				hasher.update(&sticker_image);
+				let mut hashurl = HashUrl {
+					hash: hasher.finalize(),
+					url: "TODO:matrix_upload_url".to_owned()
+				};
+				match database_tree.get(&hashurl.hash) {
+					Some(value) => hashurl.url = value.clone(),
+					None => {
+						print!("     upload Sticker\n");
+						io::stdout().flush()?;
+						upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
+						database
+							.as_ref()
+							.unwrap()
+							.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
+						database_tree.insert(hashurl.hash, hashurl.url);
+					}
+				}
+			}*/
+			Ok(())
+		})
+		.for_each(|res: anyhow::Result<()>| {
+			if let Err(err) = res {
+				eprintln!("ERROR: {:?}", err);
+			}
+		});
 	println!();
 	if database.is_some() {
 		database.unwrap().sync_data()?;
