@@ -2,4 +2,4 @@
 set -eo pipefail
 
 # make sure I didn't forget to run rustfmt
-cargo  fmt --all -- --check -l || ( echo -e "\e[1mYou need to run 'cargo fmt' first\e[0m" && false )
+cargo +nightly fmt --all -- --check -l || ( echo -e "\e[1mYou need to run 'cargo fmt' first\e[0m" && false )
