@@ -11,6 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install rlottie
+        run: |
+          sudo apt -y update
+          sudo apt -y install --no-install-recommends librlottie-dev
       - run: cargo test --workspace --all-features
         env:
           RUST_BACKTRACE: 1
