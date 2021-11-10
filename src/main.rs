@@ -224,12 +224,18 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		},
 	};
 
-	use indicatif::ParallelProgressIterator;
+	use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 	use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+	let pb = ProgressBar::new(stickerpack.stickers.len() as u64);
+	pb.set_style(
+		ProgressStyle::default_bar()
+			.template("[{wide_bar:.cyan/blue}] {pos:>3}/{len} {msg}")
+			.progress_chars("#> "),
+	);
 	stickerpack
 		.stickers
 		.par_iter()
-		.progress()
+		.progress_with(pb)
 		.enumerate()
 		.map(|(i, sticker)| {
 			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
