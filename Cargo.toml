@@ -21,3 +21,7 @@ sha2 = "0.9"
 structopt = "0.3.25"
 tempfile = "3.2"
 toml = "0.5.8"
+
+[profile.release]
+lto = true
+opt-level = 3
