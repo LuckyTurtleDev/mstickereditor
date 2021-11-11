@@ -1,4 +1,7 @@
-use anyhow::{anyhow, bail, Context};
+#![warn(rust_2018_idioms)]
+#![forbid(unsafe_code)]
+
+use anyhow::{anyhow, Context};
 use directories::ProjectDirs;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
@@ -17,6 +20,14 @@ use std::{
 };
 use structopt::StructOpt;
 use tempfile::NamedTempFile;
+
+mod config;
+use config::*;
+
+mod matrix;
+use matrix::upload_to_matrix;
+
+mod tg;
 
 const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
@@ -48,143 +59,23 @@ enum Opt {
 	Import(OptImport)
 }
 
-#[derive(Deserialize)]
-struct Matrix {
-	homeserver_url: String,
-	user: String,
-	access_token: String
-}
-
-#[derive(Deserialize)]
-struct TTelegram {
-	bot_key: String
-}
-
-#[derive(Deserialize)]
-struct TomlFile {
-	telegram: TTelegram,
-	matrix: Matrix
-}
-
-// TODO rename to Status
-#[derive(Debug, Deserialize)]
-struct TJsonState {
-	ok: bool,
-
-	error_code: Option<u32>,
-	description: Option<String>
-}
-
-#[derive(Debug)]
-struct MSticker {
-	filename: String,
-	mimetype: String,
-	uri: String
-}
-
-#[derive(Debug, Deserialize)]
-struct TJsonSticker {
-	emoji: String,
-	file_id: String
-}
-
-#[derive(Debug, Deserialize)]
-struct TJsonStickerPack {
-	name: String,
-	title: String,
-	is_animated: bool,
-	stickers: Vec<TJsonSticker>
-}
-
-#[derive(Debug, Deserialize)]
-struct TJsonFile {
-	file_path: String
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
 	hash: GenericArray<u8, <Sha512 as Digest>::OutputSize>,
 	url: String
 }
 
-#[derive(Debug, Deserialize)]
-struct MatrixError {
-	errcode: String,
-	error: String,
-	_retry_after_ms: Option<u32>
-}
-
-fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
-	let resp_state: TJsonState = serde_json::from_value(resp.clone())?;
-	if !resp_state.ok {
-		bail!(
-			"Telegram request was not successful: {} {}",
-			resp_state.error_code.unwrap(),
-			resp_state.description.unwrap()
-		);
-	}
-	let resp = resp.get_mut("result").ok_or_else(|| anyhow!("Missing 'result'"))?.take();
-	Ok(serde_json::from_value(resp)?)
-}
-
-fn upload_to_matrix(
-	matrix: &Matrix,
-	filename: String,
-	image_data: Vec<u8>,
-	mimetype: Option<String>
-) -> anyhow::Result<String> {
-	let url = format!("{}/_matrix/media/r0/upload", matrix.homeserver_url);
-	let mimetype = match mimetype {
-		Some(value) => value,
-		None => format!(
-			"image/{}",
-			Path::new(&filename)
-				.extension()
-				.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", filename))?
-				.to_str()
-				.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
-		)
-	};
-	let answer = attohttpc::put(url)
-		.params([("access_token", &matrix.access_token), ("filename", &filename)])
-		.header("Content-Type", mimetype)
-		.bytes(image_data)
-		.send()?; //TODO
-	if answer.status() != 200 {
-		let status = answer.status();
-		let error: Result<String, anyhow::Error> = (|| {
-			let matrix_error: MatrixError = serde_json::from_value(answer.json()?)?;
-			Ok(format!(": {} {}", matrix_error.errcode, matrix_error.error))
-		})();
-		bail!(
-			"failed to upload sticker {}: {}{}",
-			filename,
-			status,
-			error.unwrap_or(String::new())
-		);
-	}
-	// TODO return the real url here
-	Ok(String::new())
-}
-
 fn import(opt: OptImport) -> anyhow::Result<()> {
-	let toml_file: TomlFile = toml::from_str(
-		&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(|| {
+	let config: Config = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(
+		|| {
 			format!(
 				"Failed to open {}",
 				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
 			)
-		})?
-	)?;
-	let telegram_api_base_url = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
-	check_telegram_resp(attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?)?;
-
-	let stickerpack: TJsonStickerPack = serde_json::from_value(check_telegram_resp(
-		attohttpc::get(format!("{}/getStickerSet", telegram_api_base_url))
-			.param("name", &opt.pack)
-			.send()?
-			.json()?
+		}
 	)?)?;
+
+	let stickerpack = tg::get_stickerpack(&config.telegram, &opt.pack)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
@@ -242,21 +133,9 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.map(|(i, sticker)| {
 			pb.println(format!("download sticker {:02} {}", i + 1, sticker.emoji));
 
-			// get sticker metadata from telegram
-			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
-				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
-					.param("file_id", &sticker.file_id)
-					.send()?
-					.json()?
-			)?)?;
-
 			// get sticker from telegram
-			let mut sticker_image = attohttpc::get(format!(
-				"https://api.telegram.org/file/bot{}/{}",
-				toml_file.telegram.bot_key, sticker_file.file_path
-			))
-			.send()?
-			.bytes()?;
+			let mut sticker_file = tg::get_sticker_file(&config.telegram, sticker)?;
+			let mut sticker_image = sticker_file.download(&config.telegram)?;
 
 			// convert sticker from lottie to gif if neccessary
 			if !opt.noformat && sticker_file.file_path.ends_with(".tgs") {
@@ -302,7 +181,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 					value.clone()
 				} else {
 					pb.println(format!("  upload sticker {:02} {}", i + 1, sticker.emoji));
-					let url = upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
+					let url = upload_to_matrix(&config.matrix, sticker_file.file_path, sticker_image, None)?;
 					hashurl = Some(HashUrl { hash, url: url.clone() });
 					url
 				};
