@@ -2,7 +2,7 @@ use anyhow::{anyhow, bail, Context};
 use directories::ProjectDirs;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
-use indicatif::ProgressIterator;
+use indicatif::{ProgressBar, ProgressStyle};
 use lottie2gif::{Animation, Color};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
@@ -223,9 +223,6 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			None
 		},
 	};
-
-	use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
-	use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 	let pb = ProgressBar::new(stickerpack.stickers.len() as u64);
 	pb.set_style(
 		ProgressStyle::default_bar()
@@ -235,10 +232,9 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	stickerpack
 		.stickers
 		.par_iter()
-		.progress_with(pb.clone())
 		.enumerate()
 		.map(|(i, sticker)| {
-			pb.println(format!("download sticker {:02} {}", i, sticker.emoji));
+			pb.println(format!("download sticker {:02} {}", i + 1, sticker.emoji));
 			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 					.param("file_id", &sticker.file_id)
@@ -274,7 +270,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				sticker_file.file_path += ".gif";
 			}
 			if opt.download {
-				pb.println(format!("    save sticker {:02} {}", i, sticker.emoji));
+				pb.println(format!("    save sticker {:02} {}", i + 1, sticker.emoji));
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
@@ -291,7 +287,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				match database_tree.get(&hashurl.hash) {
 					Some(value) => hashurl.url = value.clone(),
 					None => {
-						pb.println(format!("  upload sticker {:02} {}",i,  sticker.emoji));
+						pb.println(format!("  upload sticker {:02} {}",i+1,  sticker.emoji));
 						upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
 						database
 							.as_ref()
@@ -301,7 +297,8 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 					}
 				}
 			}*/
-			pb.println(format!("  finish sticker {:02} {}", i, sticker.emoji));
+			pb.println(format!("  finish sticker {:02} {}", i + 1, sticker.emoji));
+			pb.inc(1);
 			Ok(())
 		})
 		.for_each(|res: anyhow::Result<()>| {
@@ -309,6 +306,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				eprintln!("ERROR: {:?}", err);
 			}
 		});
+	pb.finish();
 	println!();
 	if database.is_some() {
 		database.unwrap().sync_data()?;
