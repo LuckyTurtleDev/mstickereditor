@@ -9,7 +9,7 @@ edition = "2018"
 anyhow = "1.0"
 attohttpc = { version = "0.18", features = ["compress", "json", "rustls"], default-features = false }
 directories = "4.0"
-flate2 = { version = "1.0", features = ["zlib"] } # we use zlib so that we get good performance even in debug mode
+flate2 = "1.0"
 generic-array = { version = "0.14" , features = ["serde"] }
 indicatif = {version = "0.16", features = ["rayon"]}
 lottie2gif = "0.1.1"
