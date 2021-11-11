@@ -6,6 +6,7 @@ use directories::ProjectDirs;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
 use indicatif::{ProgressBar, ProgressStyle};
+use libwebp::WebPGetInfo as webp_get_info;
 use lottie2gif::{Animation, Color};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
@@ -26,6 +27,8 @@ use config::*;
 
 mod matrix;
 use matrix::upload_to_matrix;
+
+mod stickerpicker;
 
 mod tg;
 
@@ -59,10 +62,23 @@ enum Opt {
 	Import(OptImport)
 }
 
+type Hash = GenericArray<u8, <Sha512 as Digest>::OutputSize>;
+
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
-	hash: GenericArray<u8, <Sha512 as Digest>::OutputSize>,
+	hash: Hash,
 	url: String
+}
+
+struct Sticker {
+	file_hash: Hash,
+	mxc_url: String,
+
+	emoji: String,
+	width: u32,
+	height: u32,
+	file_size: usize,
+	mimetype: String
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
@@ -75,7 +91,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		}
 	)?)?;
 
-	let stickerpack = tg::get_stickerpack(&config.telegram, &opt.pack)?;
+	let stickerpack = dbg!(tg::get_stickerpack(&config.telegram, &opt.pack)?);
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
@@ -126,20 +142,19 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.template("[{wide_bar:.cyan/blue}] {pos:>3}/{len} {msg}")
 			.progress_chars("#> ")
 	);
-	let hashes: Vec<HashUrl> = stickerpack
+	let stickers: Vec<Sticker> = stickerpack
 		.stickers
 		.par_iter()
 		.enumerate()
-		.map(|(i, sticker)| {
-			pb.println(format!("download sticker {:02} {}", i + 1, sticker.emoji));
+		.map(|(i, tg_sticker)| {
+			pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 			// get sticker from telegram
-			let mut sticker_file = tg::get_sticker_file(&config.telegram, sticker)?;
+			let mut sticker_file = tg::get_sticker_file(&config.telegram, &tg_sticker)?;
 			let mut sticker_image = sticker_file.download(&config.telegram)?;
 
 			// convert sticker from lottie to gif if neccessary
-			if !opt.noformat && sticker_file.file_path.ends_with(".tgs") {
-				pb.println(format!(" convert sticker {:02} {}", i, sticker.emoji));
+			let (width, height) = if sticker_file.file_path.ends_with(".tgs") {
 				let mut tmp = NamedTempFile::new()?;
 				{
 					let mut out = GzDecoder::new(&mut tmp);
@@ -147,23 +162,30 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				}
 				tmp.flush()?;
 				let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
-				sticker_image.clear();
-				lottie2gif::convert(
-					sticker,
-					Color {
-						r: 0,
-						g: 0,
-						b: 0,
-						alpha: true
-					},
-					&mut sticker_image
-				)?;
-				sticker_file.file_path += ".gif";
-			}
+				let size = sticker.size();
+				if !opt.noformat {
+					pb.println(format!(" convert sticker {:02} {}", i, tg_sticker.emoji));
+					sticker_image.clear();
+					lottie2gif::convert(
+						sticker,
+						Color {
+							r: 0,
+							g: 0,
+							b: 0,
+							alpha: true
+						},
+						&mut sticker_image
+					)?;
+					sticker_file.file_path += ".gif";
+				}
+				(size.width as u32, size.height as u32)
+			} else {
+				webp_get_info(&sticker_image)?
+			};
 
 			// store file on disk if desired
 			if opt.download {
-				pb.println(format!("    save sticker {:02} {}", i + 1, sticker.emoji));
+				pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
@@ -171,29 +193,46 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				)?;
 			}
 
-			let mut hashurl = None;
+			let mut sticker = None;
 			if !opt.noupload && database.is_some() {
 				let mut hasher = Sha512::new();
 				hasher.update(&sticker_image);
 				let hash = hasher.finalize();
 
-				let url = if let Some(value) = database_tree.get(&hash) {
+				let mimetype = format!(
+					"image/{}",
+					Path::new(&sticker_file.file_path)
+						.extension()
+						.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", sticker_file.file_path))?
+						.to_str()
+						.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
+				);
+
+				let mxc_url = if let Some(value) = database_tree.get(&hash) {
 					value.clone()
 				} else {
-					pb.println(format!("  upload sticker {:02} {}", i + 1, sticker.emoji));
-					let url = upload_to_matrix(&config.matrix, sticker_file.file_path, sticker_image, None)?;
-					hashurl = Some(HashUrl { hash, url: url.clone() });
+					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
+					let url = upload_to_matrix(&config.matrix, sticker_file.file_path, &sticker_image, &mimetype)?;
 					url
 				};
-				// TODO set the url somewhere???
+
+				sticker = Some(Sticker {
+					file_hash: hash,
+					mxc_url,
+					emoji: tg_sticker.emoji.clone(),
+					width,
+					height,
+					file_size: sticker_image.len(),
+					mimetype
+				});
 			}
 
-			pb.println(format!("  finish sticker {:02} {}", i + 1, sticker.emoji));
+			pb.println(format!("  finish sticker {:02} {}", i + 1, tg_sticker.emoji));
 			pb.inc(1);
-			Ok(hashurl)
+			Ok(sticker)
 		})
-		.filter_map(|res: anyhow::Result<Option<HashUrl>>| match res {
-			Ok(hash) => hash,
+		.filter_map(|res: anyhow::Result<Option<Sticker>>| match res {
+			Ok(sticker) => sticker,
 			Err(err) => {
 				eprintln!("ERROR: {:?}", err);
 				None
@@ -202,11 +241,19 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.collect();
 
 	// write new entries into the database
-	for hash in hashes {
+	for sticker in &stickers {
 		let db = database.as_mut().unwrap();
-		writeln!(db, "{}", serde_json::to_string(&hash)?)?;
+		let hash_url = HashUrl {
+			hash: sticker.file_hash,
+			url: sticker.mxc_url.clone()
+		};
+		writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
 		// TODO write into database_tree
 	}
+
+	// write the stickerpicker json
+	let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
+	println!("json: {}", serde_json::to_string_pretty(&pack_json)?);
 
 	pb.finish();
 	println!();

@@ -12,6 +12,7 @@ directories = "4.0"
 flate2 = "1.0"
 generic-array = { version = "0.14" , features = ["serde"] }
 indicatif = "0.16"
+libwebp = "0.1.2"
 lottie2gif = "0.2.0"
 once_cell = "1.8"
 rayon = "1.5"
