@@ -495,9 +495,9 @@ dependencies = [
 
 [[package]]
 name = "lottie2gif"
-version = "0.1.1"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b930d10bddfe516bf76f668d12a940fe40d606e9bc6ed4089b1793f7bb1cad86"
+checksum = "8258167a642335e03cee635fa9ca1b23d961d426b169634f4ca61d16c3ea71c5"
 dependencies = [
  "gif",
  "rlottie",
@@ -794,9 +794,9 @@ dependencies = [
 
 [[package]]
 name = "rlottie"
-version = "0.1.0"
+version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1da69939a48bbbc4628db02b4f5d670505cd48250e5ce45c6837c3e20ccc37fd"
+checksum = "bc045d3f69b39752eaeaf7ecb1bbc591dcc59e1d6e1942912ab2991f7d61e9ec"
 dependencies = [
  "rlottie-sys",
 ]
