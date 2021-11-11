@@ -127,7 +127,12 @@ fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json
 	Ok(serde_json::from_value(resp)?)
 }
 
-fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mimetype: Option<String>) -> anyhow::Result<()> {
+fn upload_to_matrix(
+	matrix: &Matrix,
+	filename: String,
+	image_data: Vec<u8>,
+	mimetype: Option<String>
+) -> anyhow::Result<String> {
 	let url = format!("{}/_matrix/media/r0/upload", matrix.homeserver_url);
 	let mimetype = match mimetype {
 		Some(value) => value,
@@ -158,7 +163,8 @@ fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mime
 			error.unwrap_or(String::new())
 		);
 	}
-	Ok(())
+	// TODO return the real url here
+	Ok(String::new())
 }
 
 fn import(opt: OptImport) -> anyhow::Result<()> {
@@ -216,7 +222,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.create(true)
 		.open(&database_file)
 		.with_context(|| format!("WARNING: Failed to open or create database {}", database_file.display()));
-	let database = match database {
+	let mut database = match database {
 		Ok(value) => Some(value),
 		Err(error) => {
 			eprintln!("{:?}", error);
@@ -229,24 +235,30 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.template("[{wide_bar:.cyan/blue}] {pos:>3}/{len} {msg}")
 			.progress_chars("#> ")
 	);
-	stickerpack
+	let hashes: Vec<HashUrl> = stickerpack
 		.stickers
 		.par_iter()
 		.enumerate()
 		.map(|(i, sticker)| {
 			pb.println(format!("download sticker {:02} {}", i + 1, sticker.emoji));
+
+			// get sticker metadata from telegram
 			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 					.param("file_id", &sticker.file_id)
 					.send()?
 					.json()?
 			)?)?;
+
+			// get sticker from telegram
 			let mut sticker_image = attohttpc::get(format!(
 				"https://api.telegram.org/file/bot{}/{}",
 				toml_file.telegram.bot_key, sticker_file.file_path
 			))
 			.send()?
 			.bytes()?;
+
+			// convert sticker from lottie to gif if neccessary
 			if !opt.noformat && sticker_file.file_path.ends_with(".tgs") {
 				pb.println(format!(" convert sticker {:02} {}", i, sticker.emoji));
 				let mut tmp = NamedTempFile::new()?;
@@ -269,6 +281,8 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				)?;
 				sticker_file.file_path += ".gif";
 			}
+
+			// store file on disk if desired
 			if opt.download {
 				pb.println(format!("    save sticker {:02} {}", i + 1, sticker.emoji));
 				let file_path: &Path = sticker_file.file_path.as_ref();
@@ -277,35 +291,44 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 					&sticker_image
 				)?;
 			}
-			/*if !opt.noupload && database.is_some() {
+
+			let mut hashurl = None;
+			if !opt.noupload && database.is_some() {
 				let mut hasher = Sha512::new();
 				hasher.update(&sticker_image);
-				let mut hashurl = HashUrl {
-					hash: hasher.finalize(),
-					url: "TODO:matrix_upload_url".to_owned()
+				let hash = hasher.finalize();
+
+				let url = if let Some(value) = database_tree.get(&hash) {
+					value.clone()
+				} else {
+					pb.println(format!("  upload sticker {:02} {}", i + 1, sticker.emoji));
+					let url = upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
+					hashurl = Some(HashUrl { hash, url: url.clone() });
+					url
 				};
-				match database_tree.get(&hashurl.hash) {
-					Some(value) => hashurl.url = value.clone(),
-					None => {
-						pb.println(format!("  upload sticker {:02} {}",i+1,  sticker.emoji));
-						upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
-						database
-							.as_ref()
-							.unwrap()
-							.write_all(format!("{}\n", serde_json::to_string(&hashurl)?).as_bytes())?;
-						database_tree.insert(hashurl.hash, hashurl.url);
-					}
-				}
-			}*/
+				// TODO set the url somewhere???
+			}
+
 			pb.println(format!("  finish sticker {:02} {}", i + 1, sticker.emoji));
 			pb.inc(1);
-			Ok(())
+			Ok(hashurl)
 		})
-		.for_each(|res: anyhow::Result<()>| {
-			if let Err(err) = res {
+		.filter_map(|res: anyhow::Result<Option<HashUrl>>| match res {
+			Ok(hash) => hash,
+			Err(err) => {
 				eprintln!("ERROR: {:?}", err);
+				None
 			}
-		});
+		})
+		.collect();
+
+	// write new entries into the database
+	for hash in hashes {
+		let db = database.as_mut().unwrap();
+		writeln!(db, "{}", serde_json::to_string(&hash)?)?;
+		// TODO write into database_tree
+	}
+
 	pb.finish();
 	println!();
 	if database.is_some() {
