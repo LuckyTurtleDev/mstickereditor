@@ -13,7 +13,7 @@ use std::{
 	fs::{self, File},
 	io::{self, BufRead, Write},
 	path::Path,
-	process::exit,
+	process::exit
 };
 use structopt::StructOpt;
 use tempfile::NamedTempFile;
@@ -39,31 +39,31 @@ struct OptImport {
 	/// Do not format the stickers;
 	/// The stickers can may not be shown by a matrix client
 	#[structopt(short = "F", long)]
-	noformat: bool,
+	noformat: bool
 }
 
 #[derive(Debug, StructOpt)]
 enum Opt {
 	/// import Stickerpack from telegram
-	Import(OptImport),
+	Import(OptImport)
 }
 
 #[derive(Deserialize)]
 struct Matrix {
 	homeserver_url: String,
 	user: String,
-	access_token: String,
+	access_token: String
 }
 
 #[derive(Deserialize)]
 struct TTelegram {
-	bot_key: String,
+	bot_key: String
 }
 
 #[derive(Deserialize)]
 struct TomlFile {
 	telegram: TTelegram,
-	matrix: Matrix,
+	matrix: Matrix
 }
 
 // TODO rename to Status
@@ -72,20 +72,20 @@ struct TJsonState {
 	ok: bool,
 
 	error_code: Option<u32>,
-	description: Option<String>,
+	description: Option<String>
 }
 
 #[derive(Debug)]
 struct MSticker {
 	filename: String,
 	mimetype: String,
-	uri: String,
+	uri: String
 }
 
 #[derive(Debug, Deserialize)]
 struct TJsonSticker {
 	emoji: String,
-	file_id: String,
+	file_id: String
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,25 +93,25 @@ struct TJsonStickerPack {
 	name: String,
 	title: String,
 	is_animated: bool,
-	stickers: Vec<TJsonSticker>,
+	stickers: Vec<TJsonSticker>
 }
 
 #[derive(Debug, Deserialize)]
 struct TJsonFile {
-	file_path: String,
+	file_path: String
 }
 
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
 	hash: GenericArray<u8, <Sha512 as Digest>::OutputSize>,
-	url: String,
+	url: String
 }
 
 #[derive(Debug, Deserialize)]
 struct MatrixError {
 	errcode: String,
 	error: String,
-	_retry_after_ms: Option<u32>,
+	_retry_after_ms: Option<u32>
 }
 
 fn check_telegram_resp(mut resp: serde_json::Value) -> anyhow::Result<serde_json::Value> {
@@ -138,7 +138,7 @@ fn upload_to_matrix(matrix: &Matrix, filename: String, image_data: Vec<u8>, mime
 				.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", filename))?
 				.to_str()
 				.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
-		),
+		)
 	};
 	let answer = attohttpc::put(url)
 		.params([("access_token", &matrix.access_token), ("filename", &filename)])
@@ -168,7 +168,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				"Failed to open {}",
 				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
 			)
-		})?,
+		})?
 	)?;
 	let telegram_api_base_url = format!("https://api.telegram.org/bot{}", toml_file.telegram.bot_key);
 	check_telegram_resp(attohttpc::get(format!("{}/getMe", telegram_api_base_url)).send()?.json()?)?;
@@ -177,7 +177,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		attohttpc::get(format!("{}/getStickerSet", telegram_api_base_url))
 			.param("name", &opt.pack)
 			.send()?
-			.json()?,
+			.json()?
 	)?)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.download {
@@ -199,7 +199,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 						i + 1,
 						database_file.as_path().display(),
 						error
-					),
+					)
 				};
 			}
 		},
@@ -208,7 +208,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		},
 		Err(error) => {
 			return Err(error.into());
-		},
+		}
 	};
 	let database = fs::OpenOptions::new()
 		.write(true)
@@ -221,13 +221,13 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		Err(error) => {
 			eprintln!("{:?}", error);
 			None
-		},
+		}
 	};
 	let pb = ProgressBar::new(stickerpack.stickers.len() as u64);
 	pb.set_style(
 		ProgressStyle::default_bar()
 			.template("[{wide_bar:.cyan/blue}] {pos:>3}/{len} {msg}")
-			.progress_chars("#> "),
+			.progress_chars("#> ")
 	);
 	stickerpack
 		.stickers
@@ -239,7 +239,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 					.param("file_id", &sticker.file_id)
 					.send()?
-					.json()?,
+					.json()?
 			)?)?;
 			let mut sticker_image = attohttpc::get(format!(
 				"https://api.telegram.org/file/bot{}/{}",
@@ -263,9 +263,9 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 						r: 0,
 						g: 0,
 						b: 0,
-						alpha: true,
+						alpha: true
 					},
-					&mut sticker_image,
+					&mut sticker_image
 				)?;
 				sticker_file.file_path += ".gif";
 			}
@@ -274,7 +274,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
-					&sticker_image,
+					&sticker_image
 				)?;
 			}
 			/*if !opt.noupload && database.is_some() {
@@ -321,7 +321,7 @@ fn main() {
 		exit(1);
 	}
 	let result = match Opt::from_args() {
-		Opt::Import(opt) => import(opt),
+		Opt::Import(opt) => import(opt)
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);

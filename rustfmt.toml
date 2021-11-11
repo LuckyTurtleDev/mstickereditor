@@ -9,7 +9,7 @@ tab_spaces = 4
 
 # commas inbetween but not after
 match_block_trailing_comma = true
-#trailing_comma = "Never"
+trailing_comma = "Never"
 
 # misc
 format_code_in_doc_comments = true
