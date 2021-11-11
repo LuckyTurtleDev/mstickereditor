@@ -235,9 +235,10 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	stickerpack
 		.stickers
 		.par_iter()
-		.progress_with(pb)
+		.progress_with(pb.clone())
 		.enumerate()
 		.map(|(i, sticker)| {
+			pb.println(format!("download sticker {:02} {}", i, sticker.emoji));
 			let mut sticker_file: TJsonFile = serde_json::from_value(check_telegram_resp(
 				attohttpc::get(format!("{}/getFile", telegram_api_base_url))
 					.param("file_id", &sticker.file_id)
@@ -251,6 +252,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			.send()?
 			.bytes()?;
 			if !opt.noformat && sticker_file.file_path.ends_with(".tgs") {
+				pb.println(format!(" convert sticker {:02} {}", i, sticker.emoji));
 				let mut tmp = NamedTempFile::new()?;
 				{
 					let mut out = GzDecoder::new(&mut tmp);
@@ -272,6 +274,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				sticker_file.file_path += ".gif";
 			}
 			if opt.download {
+				pb.println(format!("    save sticker {:02} {}", i, sticker.emoji));
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
@@ -288,8 +291,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				match database_tree.get(&hashurl.hash) {
 					Some(value) => hashurl.url = value.clone(),
 					None => {
-						print!("     upload Sticker\n");
-						io::stdout().flush()?;
+						pb.println(format!("  upload sticker {:02} {}",i,  sticker.emoji));
 						upload_to_matrix(&toml_file.matrix, sticker_file.file_path, sticker_image, None)?;
 						database
 							.as_ref()
@@ -299,6 +301,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 					}
 				}
 			}*/
+			pb.println(format!("  finish sticker {:02} {}", i, sticker.emoji));
 			Ok(())
 		})
 		.for_each(|res: anyhow::Result<()>| {
