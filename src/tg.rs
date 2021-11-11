@@ -23,9 +23,9 @@ pub struct StickerFile {
 }
 
 #[derive(Debug, Deserialize)]
-struct TgResponse {
+struct TgResponse<T> {
 	ok: bool,
-	result: Option<serde_json::Value>,
+	result: Option<T>,
 
 	error_code: Option<u32>,
 	description: Option<String>
@@ -39,7 +39,7 @@ where
 	K: AsRef<str>,
 	V: ToString
 {
-	let resp: TgResponse = attohttpc::get(format!("https://api.telegram.org/bot{}/{}", tg_config.bot_key, operation))
+	let resp: TgResponse<T> = attohttpc::get(format!("https://api.telegram.org/bot{}/{}", tg_config.bot_key, operation))
 		.params(params)
 		.send()?
 		.json()?;
@@ -50,7 +50,7 @@ where
 			resp.description.unwrap()
 		);
 	}
-	Ok(serde_json::from_value(resp.result.unwrap())?)
+	Ok(resp.result.unwrap())
 }
 
 pub fn get_stickerpack(tg_config: &TelegramConfig, name: &str) -> anyhow::Result<StickerPack> {
