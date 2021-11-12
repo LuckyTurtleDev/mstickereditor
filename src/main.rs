@@ -239,7 +239,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			}
 		})
 		.collect();
-		pb.finish();
+	pb.finish();
 
 	// write new entries into the database
 	for sticker in &stickers {
@@ -254,10 +254,9 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	if database.is_some() {
 		database.unwrap().sync_data()?;
 	}
-	
+
 	// write the stickerpicker json
-	if !stickers.is_empty()
-	{
+	if !stickers.is_empty() {
 		let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
 		println!("json: {}", serde_json::to_string_pretty(&pack_json)?);
 	}
