@@ -64,11 +64,11 @@ impl StickerPack {
 	pub(crate) fn new(tg_pack: &tg::StickerPack, stickers: &[super::Sticker]) -> Self {
 		Self {
 			title: tg_pack.title.clone(),
-			id: unimplemented!(),
+			id: String::from("unimplemented!"),
 
 			tg_pack: TgPack {
 				short_name: tg_pack.name.clone(),
-				hash: unimplemented!()
+				hash: String::from("unimplemented!")
 			},
 
 			stickers: stickers
@@ -89,14 +89,14 @@ impl StickerPack {
 							thumbnail_info: metadata
 						},
 						msgtype: "m.sticker",
-						id: unimplemented!(),
+						id: String::from("unimplemented!"),
 						tg_sticker: TgSticker {
 							pack: TgStickerPack {
-								id: unimplemented!(),
+								id: String::from("unimplemented!"),
 								short_name: tg_pack.name.clone()
 							},
-							id: unimplemented!(),
-							emoticons: unimplemented!()
+							id: String::from("unimplemented!"),
+							emoticons: vec![sticker.emoji.clone()]
 						}
 					}
 				})

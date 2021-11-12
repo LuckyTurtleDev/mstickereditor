@@ -91,7 +91,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		}
 	)?)?;
 
-	let stickerpack = dbg!(tg::get_stickerpack(&config.telegram, &opt.pack)?);
+	let stickerpack = tg::get_stickerpack(&config.telegram, &opt.pack)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.download {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
@@ -234,11 +234,12 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		.filter_map(|res: anyhow::Result<Option<Sticker>>| match res {
 			Ok(sticker) => sticker,
 			Err(err) => {
-				eprintln!("ERROR: {:?}", err);
+				pb.println(format!("ERROR: {:?}", err));
 				None
 			}
 		})
 		.collect();
+		pb.finish();
 
 	// write new entries into the database
 	for sticker in &stickers {
@@ -250,16 +251,17 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
 		// TODO write into database_tree
 	}
-
-	// write the stickerpicker json
-	let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
-	println!("json: {}", serde_json::to_string_pretty(&pack_json)?);
-
-	pb.finish();
-	println!();
 	if database.is_some() {
 		database.unwrap().sync_data()?;
 	}
+	
+	// write the stickerpicker json
+	if !stickers.is_empty()
+	{
+		let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
+		println!("json: {}", serde_json::to_string_pretty(&pack_json)?);
+	}
+
 	Ok(())
 }
 
