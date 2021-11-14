@@ -15,6 +15,11 @@ pub struct MatrixWhoami {
 	device_id: String
 }
 
+#[derive(Debug, Deserialize)]
+pub struct MatrixContentUri {
+	content_uri: String
+}
+
 pub fn whoami(matrix: &MatrixConfig) -> anyhow::Result<MatrixWhoami> {
 	url::Url::parse(&matrix.homeserver_url)?;
 	let answer = attohttpc::get(format!("{}/_matrix/client/r0/account/whoami", matrix.homeserver_url))
@@ -56,5 +61,6 @@ pub fn upload_to_matrix(
 			error.unwrap_or(String::new())
 		);
 	}
-	Ok(answer.text()?)
+	let content_uri: MatrixContentUri = serde_json::from_value(answer.json()?)?;
+	Ok(content_uri.content_uri)
 }
