@@ -11,8 +11,8 @@ pub struct MatrixError {
 
 #[derive(Debug, Deserialize)]
 pub struct MatrixWhoami {
-	errcode: String,
-	error: String
+	user_id: String,
+	device_id: String
 }
 
 pub fn whoami(matrix: &MatrixConfig) -> anyhow::Result<MatrixWhoami> {
