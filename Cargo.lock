@@ -582,6 +582,7 @@ dependencies = [
  "structopt",
  "tempfile",
  "toml",
+ "url",
 ]
 
 [[package]]

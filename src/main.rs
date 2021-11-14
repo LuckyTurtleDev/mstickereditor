@@ -91,6 +91,9 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		}
 	)?)?;
 
+	if !opt.noupload {
+		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
+	}
 	let stickerpack = tg::get_stickerpack(&config.telegram, &opt.pack)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.download {
