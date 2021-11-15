@@ -57,9 +57,18 @@ struct OptImport {
 }
 
 #[derive(Debug, StructOpt)]
+struct OptSetWidget {
+	/// The url of your sticker picker
+	widgeturl: String
+}
+
+#[derive(Debug, StructOpt)]
 enum Opt {
 	/// import Stickerpack from telegram
-	Import(OptImport)
+	Import(OptImport),
+
+	/// enable a custom sticker picker widget in a supported Matirx client
+	SetWidget(OptSetWidget)
 }
 
 type Hash = GenericArray<u8, <Sha512 as Digest>::OutputSize>;
@@ -81,7 +90,7 @@ struct Sticker {
 	mimetype: String
 }
 
-fn import(opt: OptImport) -> anyhow::Result<()> {
+fn load_config_file() -> anyhow::Result<(Config)> {
 	let config: Config = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(
 		|| {
 			format!(
@@ -90,6 +99,17 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			)
 		}
 	)?)?;
+	Ok(config)
+}
+
+fn set_widget(opt: OptSetWidget) -> anyhow::Result<()> {
+	let config = load_config_file()?;
+	matrix::set_widget(&config.matrix, config.matrix.user.clone(), opt.widgeturl).expect("Error setting widget");
+	Ok(())
+}
+
+fn import(opt: OptImport) -> anyhow::Result<()> {
+	let config = load_config_file()?;
 
 	if !opt.noupload {
 		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
@@ -274,7 +294,8 @@ fn main() {
 		exit(1);
 	}
 	let result = match Opt::from_args() {
-		Opt::Import(opt) => import(opt)
+		Opt::Import(opt) => import(opt),
+		Opt::SetWidget(opt) => set_widget(opt)
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);

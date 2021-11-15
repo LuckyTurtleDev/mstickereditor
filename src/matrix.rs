@@ -1,4 +1,4 @@
-use super::MatrixConfig;
+use super::{stickerpicker::StickerWidget, MatrixConfig};
 use anyhow::bail;
 use serde::Deserialize;
 
@@ -18,6 +18,27 @@ pub struct MatrixWhoami {
 #[derive(Debug, Deserialize)]
 pub struct MatrixContentUri {
 	content_uri: String
+}
+
+pub fn set_widget(matrix: &MatrixConfig, sender: String, url: String) -> anyhow::Result<()> {
+	let stickerwidget = StickerWidget::new(url, sender);
+	let answer = attohttpc::put(format!(
+		"{}/_matrix/client/r0/user/{}/account_data/m.widgets",
+		matrix.homeserver_url, matrix.user
+	))
+	.param("access_token", &matrix.access_token)
+	.header("Content-Type", "application/json")
+	.json(&stickerwidget)?
+	.send()?;
+	if answer.status() != 200 {
+		let status = answer.status();
+		let error: anyhow::Result<String> = (|| {
+			let matrix_error: MatrixError = serde_json::from_value(answer.json()?)?;
+			Ok(format!(": {} {}", matrix_error.errcode, matrix_error.error))
+		})();
+		bail!("{} {}", status, error.unwrap_or(String::new()))
+	}
+	Ok(())
 }
 
 pub fn whoami(matrix: &MatrixConfig) -> anyhow::Result<MatrixWhoami> {
