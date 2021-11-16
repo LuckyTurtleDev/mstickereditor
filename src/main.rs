@@ -82,6 +82,7 @@ struct HashUrl {
 struct Sticker {
 	file_hash: Hash,
 	mxc_url: String,
+	file_id: String,
 
 	emoji: String,
 	width: u32,
@@ -242,6 +243,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 				sticker = Some(Sticker {
 					file_hash: hash,
 					mxc_url,
+					file_id: tg_sticker.file_id.clone(),
 					emoji: tg_sticker.emoji.clone(),
 					width,
 					height,
