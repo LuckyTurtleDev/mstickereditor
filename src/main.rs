@@ -278,12 +278,15 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		database.unwrap().sync_data()?;
 	}
 
-	// write the stickerpicker json
+	// save the stickerpack to file
 	if !stickers.is_empty() {
+		println!("save stickerpack {} to {}.json", stickerpack.title, stickerpack.name);
 		let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
-		println!("json: {}", serde_json::to_string_pretty(&pack_json)?);
+		fs::write(
+			Path::new(&format!("./{}.json", stickerpack.name)),
+			serde_json::to_string_pretty(&pack_json)?
+		)?;
 	}
-
 	Ok(())
 }
 
