@@ -42,9 +42,9 @@ struct OptImport {
 	/// Pack url
 	pack: String,
 
-	/// Save sticker local
+	/// Save stickers to disk
 	#[structopt(short, long)]
-	download: bool,
+	save: bool,
 
 	/// Does not upload the sticker to Matrix
 	#[structopt(short = "U", long)]
@@ -117,7 +117,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 	}
 	let stickerpack = tg::get_stickerpack(&config.telegram, &opt.pack)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
-	if opt.download {
+	if opt.save {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
 	let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as Digest>::OutputSize>, String>::new();
@@ -208,7 +208,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 			};
 
 			// store file on disk if desired
-			if opt.download {
+			if opt.save {
 				pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
 				let file_path: &Path = sticker_file.file_path.as_ref();
 				fs::write(
