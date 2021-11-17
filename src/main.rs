@@ -91,7 +91,7 @@ struct Sticker {
 	mimetype: String
 }
 
-fn load_config_file() -> anyhow::Result<(Config)> {
+fn load_config_file() -> anyhow::Result<Config> {
 	let config: Config = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(
 		|| {
 			format!(
