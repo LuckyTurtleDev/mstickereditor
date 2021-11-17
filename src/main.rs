@@ -286,7 +286,7 @@ fn import(opt: OptImport) -> anyhow::Result<()> {
 		let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
 		fs::write(
 			Path::new(&format!("./{}.json", stickerpack.name)),
-			serde_json::to_string_pretty(&pack_json)?
+			serde_json::to_string(&pack_json)?
 		)?;
 	}
 	Ok(())
