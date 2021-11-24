@@ -17,7 +17,7 @@ Import sticker packs from telegram, to be used at the Maunium sticker picker for
 
 
 ### Config file:
-you need to create the following config file and enter you value:
+you need to create the following config file and enter you values:
 ```toml
 [telegram]
 bot_key = "YOUR-TELEGRAM-BOT-KEY"
