@@ -7,7 +7,7 @@ Import sticker packs from telegram, to be used at the Maunium sticker picker for
 
 
 ### Requirements:
-* a Stickerpickerserver [msrd0/docker-stickerpicker](https://github.com/msrd0/docker-stickerpicker) or [https://github.com/maunium/stickerpicker](maunium/stickerpicker)
+* a Stickerpickerserver [msrd0/docker-stickerpicker](https://github.com/msrd0/docker-stickerpicker) or [maunium/stickerpicker](https://github.com/maunium/stickerpicker)
 * a telegram bot key
 
 ### Dependencies:
