@@ -13,7 +13,9 @@ Import sticker packs from telegram, to be used at the Maunium sticker picker for
 ### Dependencies:
 * libwebp
 * rlottie
-* rust
+* cargo (make)
+* clang (make)
+* ldd (make)
 
 
 ### Config file:
