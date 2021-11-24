@@ -118,9 +118,12 @@ impl StickerPack {
 			stickers: stickers
 				.iter()
 				.map(|sticker| {
+					let divisor = (sticker.width as f32 / 256.0)
+						.round()
+						.max((sticker.height as f32 / 256.0).round()) as u32;
 					let metadata = Metadata {
-						w: sticker.width,
-						h: sticker.height,
+						w: sticker.width / divisor,
+						h: sticker.height / divisor,
 						size: sticker.file_size,
 						mimetype: sticker.mimetype.clone()
 					};
