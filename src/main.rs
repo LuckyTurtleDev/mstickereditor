@@ -15,7 +15,7 @@ use sha2::{Digest, Sha512};
 use std::{
 	collections::BTreeMap,
 	fs::{self, File},
-	io::{self, BufRead, Write},
+	io::{self, stdout, BufRead, Write},
 	path::Path,
 	process::exit
 };
@@ -34,8 +34,9 @@ mod tg;
 
 const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
+const CARGO_PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 static PROJECT_DIRS: Lazy<ProjectDirs> =
-	Lazy::new(|| ProjectDirs::from("de", "lukas1818", "mstickereditor").expect("failed to get project dirs"));
+	Lazy::new(|| ProjectDirs::from("de", "lukas1818", CARGO_PKG_NAME).expect("failed to get project dirs"));
 
 #[derive(Debug, StructOpt)]
 struct OptImport {
@@ -63,12 +64,20 @@ struct OptSetWidget {
 }
 
 #[derive(Debug, StructOpt)]
+struct OptShellCompletion {
+	shell: structopt::clap::Shell
+}
+
+#[derive(Debug, StructOpt)]
 enum Opt {
 	/// import Stickerpack from telegram
 	Import(OptImport),
 
 	/// enable a custom sticker picker widget in a supported Matirx client
-	SetWidget(OptSetWidget)
+	SetWidget(OptSetWidget),
+
+	/// print shell completion for a given shell
+	ShellCompletion(OptShellCompletion)
 }
 
 type Hash = GenericArray<u8, <Sha512 as Digest>::OutputSize>;
@@ -89,6 +98,11 @@ struct Sticker {
 	height: u32,
 	file_size: usize,
 	mimetype: String
+}
+
+fn print_shell_completion(opt: OptShellCompletion) -> anyhow::Result<()> {
+	Opt::clap().gen_completions_to(CARGO_PKG_NAME, opt.shell, &mut stdout());
+	Ok(())
 }
 
 fn load_config_file() -> anyhow::Result<Config> {
@@ -300,7 +314,8 @@ fn main() {
 	}
 	let result = match Opt::from_args() {
 		Opt::Import(opt) => import(opt),
-		Opt::SetWidget(opt) => set_widget(opt)
+		Opt::SetWidget(opt) => set_widget(opt),
+		Opt::ShellCompletion(opt) => print_shell_completion(opt)
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);
