@@ -1,5 +1,6 @@
 use super::TelegramConfig;
 use anyhow::bail;
+use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize};
 use std::borrow::Borrow;
 
@@ -22,13 +23,22 @@ pub struct StickerFile {
 	pub file_path: String
 }
 
-#[derive(Debug, Deserialize)]
-struct TgResponse<T> {
-	ok: bool,
-	result: Option<T>,
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum TgResponse<T> {
+	Ok {
+		#[allow(dead_code)]
+		ok: MustBe!(true),
 
-	error_code: Option<u32>,
-	description: Option<String>
+		result: T
+	},
+	Err {
+		#[allow(dead_code)]
+		ok: MustBe!(false),
+
+		error_code: u32,
+		description: String
+	}
 }
 
 fn tg_get<T, P, K, V>(tg_config: &TelegramConfig, operation: &str, params: P) -> anyhow::Result<T>
@@ -43,14 +53,13 @@ where
 		.params(params)
 		.send()?
 		.json()?;
-	if !resp.ok {
-		bail!(
-			"Telegram request was not successful: {} {}",
-			resp.error_code.unwrap(),
-			resp.description.unwrap()
-		);
-	}
-	Ok(resp.result.unwrap())
+	let result = match resp {
+		TgResponse::Ok { result, .. } => result,
+		TgResponse::Err {
+			error_code, description, ..
+		} => bail!("Telegram request was not successful: {error_code} {description}")
+	};
+	Ok(result)
 }
 
 pub fn get_stickerpack(tg_config: &TelegramConfig, name: &str) -> anyhow::Result<StickerPack> {
