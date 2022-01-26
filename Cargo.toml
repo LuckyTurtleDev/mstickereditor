@@ -10,6 +10,8 @@ description= "import sticker packs from telegram, to be used at the Maunium stic
 [dependencies]
 anyhow = "1.0"
 attohttpc = { version = "0.18", features = ["compress", "json", "rustls"], default-features = false }
+clap = { version = "3.0", features = ["derive"] }
+clap_complete = "3.0"
 directories = "4.0"
 flate2 = "1.0"
 generic-array = { version = "0.14" , features = ["serde"] }
@@ -22,7 +24,6 @@ rayon = "1.5"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.9"
-structopt = "0.3.25"
 tempfile = "3.2"
 toml = "0.5.8"
 url = "2.2"

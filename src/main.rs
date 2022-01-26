@@ -2,6 +2,7 @@
 #![forbid(unsafe_code)]
 
 use anyhow::{anyhow, Context};
+use clap::{IntoApp, Parser};
 use directories::ProjectDirs;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
@@ -19,7 +20,6 @@ use std::{
 	path::Path,
 	process::exit
 };
-use structopt::StructOpt;
 use tempfile::NamedTempFile;
 
 mod config;
@@ -38,37 +38,37 @@ const CARGO_PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 static PROJECT_DIRS: Lazy<ProjectDirs> =
 	Lazy::new(|| ProjectDirs::from("de", "lukas1818", CARGO_PKG_NAME).expect("failed to get project dirs"));
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct OptImport {
 	/// Pack url
 	pack: String,
 
 	/// Save stickers to disk
-	#[structopt(short, long)]
+	#[clap(short, long)]
 	save: bool,
 
 	/// Does not upload the sticker to Matrix
-	#[structopt(short = "U", long)]
+	#[clap(short = 'U', long)]
 	noupload: bool,
 
 	/// Do not format the stickers;
 	/// The stickers can may not be shown by a matrix client
-	#[structopt(short = "F", long)]
+	#[clap(short = 'F', long)]
 	noformat: bool
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct OptSetWidget {
 	/// The url of your sticker picker
 	widgeturl: String
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct OptShellCompletion {
-	shell: structopt::clap::Shell
+	shell: clap_complete::Shell
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 enum Opt {
 	/// import Stickerpack from telegram
 	Import(OptImport),
@@ -101,7 +101,7 @@ struct Sticker {
 }
 
 fn print_shell_completion(opt: OptShellCompletion) -> anyhow::Result<()> {
-	Opt::clap().gen_completions_to(CARGO_PKG_NAME, opt.shell, &mut stdout());
+	clap_complete::generate(opt.shell, &mut Opt::into_app(), CARGO_PKG_NAME, &mut stdout());
 	Ok(())
 }
 
@@ -312,7 +312,7 @@ fn main() {
 		eprintln!("Cannot create data dir {}: {}", data_dir.display(), err);
 		exit(1);
 	}
-	let result = match Opt::from_args() {
+	let result = match Opt::parse() {
 		Opt::Import(opt) => import(opt),
 		Opt::SetWidget(opt) => set_widget(opt),
 		Opt::ShellCompletion(opt) => print_shell_completion(opt)
