@@ -39,10 +39,7 @@ static PROJECT_DIRS: Lazy<ProjectDirs> =
 	Lazy::new(|| ProjectDirs::from("de", "lukas1818", CARGO_PKG_NAME).expect("failed to get project dirs"));
 
 #[derive(Debug, Parser)]
-struct OptImport {
-	/// Pack url
-	pack: String,
-
+struct OptImportPack {
 	/// Save stickers to disk
 	#[clap(short, long)]
 	save: bool,
@@ -55,6 +52,16 @@ struct OptImport {
 	/// The stickers can may not be shown by a matrix client
 	#[clap(short = 'F', long)]
 	noformat: bool
+}
+
+#[derive(Debug, Parser)]
+struct OptImport {
+	/// Pack url
+	#[clap(required = true)]
+	packs: Vec<String>,
+
+	#[clap(flatten)]
+	opt_pack: OptImportPack
 }
 
 #[derive(Debug, Parser)]
@@ -126,10 +133,18 @@ fn set_widget(opt: OptSetWidget) -> anyhow::Result<()> {
 fn import(opt: OptImport) -> anyhow::Result<()> {
 	let config = load_config_file()?;
 
-	if !opt.noupload {
+	if !opt.opt_pack.noupload {
 		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
 	}
-	let stickerpack = tg::get_stickerpack(&config.telegram, &opt.pack)?;
+	for pack in opt.packs {
+		println!("{pack}");
+		import_pack(&pack, &config, &opt.opt_pack)?;
+	}
+	Ok(())
+}
+
+fn import_pack(pack: &String, config: &Config, opt: &OptImportPack) -> anyhow::Result<()> {
+	let stickerpack = tg::get_stickerpack(&config.telegram, &pack)?;
 	println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
 	if opt.save {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
