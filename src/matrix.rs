@@ -11,8 +11,8 @@ pub struct MatrixError {
 
 #[derive(Debug, Deserialize)]
 pub struct MatrixWhoami {
-	user_id: String,
-	device_id: String
+	_user_id: String,
+	_device_id: String
 }
 
 #[derive(Debug, Deserialize)]
