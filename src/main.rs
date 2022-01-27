@@ -12,7 +12,7 @@ use lottie2gif::{Animation, Color};
 use once_cell::sync::Lazy;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha512};
+use sha2::{digest::OutputSizeUser, Digest, Sha512};
 use std::{
 	collections::BTreeMap,
 	fs::{self, File},
@@ -81,7 +81,7 @@ enum Opt {
 	ShellCompletion(OptShellCompletion)
 }
 
-type Hash = GenericArray<u8, <Sha512 as Digest>::OutputSize>;
+type Hash = GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
@@ -156,7 +156,7 @@ fn import_pack(pack: &String, config: &Config, opt: &OptImport) -> anyhow::Resul
 	if opt.save {
 		fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 	}
-	let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as Digest>::OutputSize>, String>::new();
+	let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>, String>::new();
 	let database_file = PROJECT_DIRS.data_dir().join(DATABASE_FILE);
 	match File::open(&database_file) {
 		Ok(file) => {
