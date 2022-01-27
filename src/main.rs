@@ -130,14 +130,27 @@ fn set_widget(opt: OptSetWidget) -> anyhow::Result<()> {
 	Ok(())
 }
 
-fn import(opt: OptImport) -> anyhow::Result<()> {
+fn import(mut opt: OptImport) -> anyhow::Result<()> {
 	let config = load_config_file()?;
 
 	if !opt.opt_pack.noupload {
 		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
 	}
-	for pack in opt.packs {
-		println!("{pack}");
+	let mut packs: Vec<String> = Vec::new();
+	while let Some(pack) = opt.packs.pop() {
+		let mut id = pack.strip_prefix("https://t.me/addstickers/");
+		if id.is_none() {
+			id = pack.strip_prefix("tg://addstickers?set=");
+		};
+		match id {
+			None => {
+				eprintln!("{pack:?} does not look like a Telegram StickerPack");
+				exit(1);
+			},
+			Some(id) => packs.push(id.into())
+		};
+	}
+	for pack in packs {
 		import_pack(&pack, &config, &opt.opt_pack)?;
 	}
 	Ok(())
