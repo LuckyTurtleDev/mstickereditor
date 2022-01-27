@@ -172,9 +172,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.0.12"
+version = "3.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2afefa54b5c7dd40918dc1e09f213a171ab5937aadccab45e804780b238f9f43"
+checksum = "08799f92c961c7a1cf0cc398a9073da99e21ce388b46372c37f3191f2f3eed3e"
 dependencies = [
  "atty",
  "bitflags",
@@ -193,7 +193,7 @@ version = "3.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "be4dabb7e2f006497e1da045feaa512acf0686f76b68d94925da2d9422dcb521"
 dependencies = [
- "clap 3.0.12",
+ "clap 3.0.13",
 ]
 
 [[package]]
@@ -528,9 +528,9 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "libc"
-version = "0.2.114"
+version = "0.2.115"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b0005d08a8f7b65fb8073cb697aa0b12b631ed251ce73d862ce50eeb52ce3b50"
+checksum = "0a8d982fa7a96a000f6ec4cfe966de9703eccde29750df2bb8949da91b0e818d"
 
 [[package]]
 name = "libloading"
@@ -647,7 +647,7 @@ version = "0.0.0"
 dependencies = [
  "anyhow",
  "attohttpc",
- "clap 3.0.12",
+ "clap 3.0.13",
  "clap_complete",
  "directories",
  "flate2",
