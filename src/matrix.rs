@@ -9,6 +9,7 @@ pub struct MatrixError {
 	_retry_after_ms: Option<u32>
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 pub struct MatrixWhoami {
 	user_id: String,

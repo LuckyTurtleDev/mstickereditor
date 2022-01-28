@@ -6,6 +6,9 @@ version = "0.1.1"
 edition = "2021"
 license = "Apache-2.0"
 description= "import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix"
+repository = "https://github.com/Lukas1818/mstickereditor"
+keywords = ["matrix", "sticker", "stickerpicker"]
+include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
 
 [dependencies]
 anyhow = "1.0"
