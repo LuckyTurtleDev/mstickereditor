@@ -7,20 +7,19 @@
 Import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix
 
 
-### Requirements:
+## Requirements:
 * a Stickerpickerserver [msrd0/docker-stickerpicker](https://github.com/msrd0/docker-stickerpicker) or [maunium/stickerpicker](https://github.com/maunium/stickerpicker)
 * a telegram bot key
 
-### Dependencies:
-* libwebp
-* rlottie
-* cargo (make)
-* clang (make)
-* ldd (make)
+#### Dependencies:
+* [libwebp](https://chromium.googlesource.com/webm/libwebp)
+* [rlottie](https://github.com/desktop-app/rlottie)
+* [cargo](https://www.rust-lang.org) (make)
+* [clang](https://lld.llvm.org/) (make)
+* [ldd](https://clang.llvm.org/) (make)
 
-
-### Config file:
-you need to create the following config file and enter you values:
+### Configuration:
+You need to create the following `config.toml` file and enter you values:
 ```toml
 [telegram]
 bot_key = "YOUR-TELEGRAM-BOT-KEY"
@@ -30,3 +29,23 @@ user = "@user:matrix.org"
 homeserver_url = "https://matrix-client.matrix.org"
 access_token = "YOUR-MATIRX-ACESSTOKEN"
 ```
+
+## Installation:
+Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
+
+For Arch Linux user or user of a Arch based distrubution a [aur package](https://aur.archlinux.org/packages/mstickereditor) is available.
+
+### Building:
+
+ Install the following packages. (I recommand to use the package managment system of your operating system):
+* [libwebp](https://chromium.googlesource.com/webm/libwebp)
+* [rlottie](https://github.com/desktop-app/rlottie)
+* [rust](https://www.rust-lang.org/tools/install)
+* [clang](https://lld.llvm.org/)
+* [ldd](https://clang.llvm.org/)
+
+To build and install mstickereditor execute the following command:
+```bash
+cargo install --locked mstickereditor
+```
+
