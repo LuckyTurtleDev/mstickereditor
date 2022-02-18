@@ -48,4 +48,4 @@ To build and install mstickereditor execute the following command:
 ```bash
 cargo install --locked mstickereditor
 ```
-
+Check [rust doc](https://doc.rust-lang.org/cargo/commands/cargo-install.html) for more information about `cargo install`.
