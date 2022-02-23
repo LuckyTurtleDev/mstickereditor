@@ -33,7 +33,7 @@ access_token = "YOUR-MATIRX-ACESSTOKEN"
 ## Installation:
 Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
 
-For Arch Linux user or user of a Arch based distrubution a [aur package](https://aur.archlinux.org/packages/mstickereditor) is available.
+For Arch Linux user or user of an Arch based distrubution an [aur package](https://aur.archlinux.org/packages/mstickereditor) is available.
 
 ### Building:
 
@@ -48,4 +48,4 @@ To build and install mstickereditor execute the following command:
 ```bash
 cargo install --locked mstickereditor
 ```
-Check [rust doc](https://doc.rust-lang.org/cargo/commands/cargo-install.html) for more information about `cargo install`.
+Check out [rust doc](https://doc.rust-lang.org/cargo/commands/cargo-install.html) for more information about `cargo install`.
