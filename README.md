@@ -6,6 +6,9 @@
 # mstickereditor
 Import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix
 
+## Features:
+* import Stickerpacks from Telegram (including animated Stickerspacks)
+* enable Stickerpicker widget for supported Matrix Clients
 
 ## Requirements:
 * a Stickerpickerserver [msrd0/docker-stickerpicker](https://github.com/msrd0/docker-stickerpicker) or [maunium/stickerpicker](https://github.com/maunium/stickerpicker)
@@ -13,7 +16,7 @@ Import sticker packs from telegram, to be used at the Maunium sticker picker for
 
 #### Dependencies:
 * [libwebp](https://chromium.googlesource.com/webm/libwebp)
-* [rlottie](https://github.com/desktop-app/rlottie)
+* [rlottie v0.2](https://github.com/Samsung/rlottie/tree/v0.2)
 * [cargo](https://www.rust-lang.org) (make)
 * [clang](https://lld.llvm.org/) (make)
 * [ldd](https://clang.llvm.org/) (make)
