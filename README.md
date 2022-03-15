@@ -4,7 +4,7 @@
 [![AUR package](https://repology.org/badge/version-for-repo/aur/mstickereditor.svg)](https://aur.archlinux.org/packages/mstickereditor/)
 
 # mstickereditor
-Import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix
+Import sticker packs from telegram, to be used at the [Maunium sticker picker](https://github.com/maunium/stickerpicker) for Matrix
 
 ## Features:
 * import Stickerpacks from Telegram (including animated Stickerspacks)
@@ -42,7 +42,7 @@ For Arch Linux user or user of an Arch based distrubution an [aur package](https
 
  Install the following packages. (I recommand to use the package managment system of your operating system):
 * [libwebp](https://chromium.googlesource.com/webm/libwebp)
-* [rlottie](https://github.com/desktop-app/rlottie)
+* [rlottie v0.2](https://github.com/Samsung/rlottie/tree/v0.2)
 * [rust](https://www.rust-lang.org/tools/install)
 * [clang](https://lld.llvm.org/)
 * [ldd](https://clang.llvm.org/)
