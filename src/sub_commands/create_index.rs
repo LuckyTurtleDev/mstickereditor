@@ -1,3 +1,4 @@
+use anyhow::{bail, Context};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::fs::read_dir;
@@ -33,6 +34,9 @@ pub fn run(opt: Opt) -> anyhow::Result<()> {
 			}
 		}
 	}
+	if packs.is_empty() {
+		bail!("Error: no stickerpacks found at working directory")
+	}
 	let homeserver_url = match opt.homeserver {
 		Some(value) => value,
 		None => crate::load_config_file()?.matrix.homeserver_url
@@ -42,6 +46,6 @@ pub fn run(opt: Opt) -> anyhow::Result<()> {
 		true => serde_json::to_string_pretty(&index).unwrap(),
 		false => serde_json::to_string(&index).unwrap()
 	};
-	std::fs::write("index.json", string)?;
+	std::fs::write("index.json", string).context("Error: could not save `index.json`")?;
 	Ok(())
 }

@@ -83,7 +83,8 @@ enum Opt {
 	/// print shell completion for a given shell
 	ShellCompletion(OptShellCompletion),
 
-	/// create the `index.json` from the local stickerpacks for the
+	/// create the `index.json` from the local stickerpacks for maunium/stickerpicker.
+	/// not need for msrd0/docker-stickerpicker. ⚠️ do not upload a `index.json` to the s3 bucket!
 	CreateIndex(create_index::Opt)
 }
 
