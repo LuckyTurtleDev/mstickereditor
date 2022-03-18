@@ -102,7 +102,7 @@ struct Sticker {
 }
 
 fn print_shell_completion(opt: OptShellCompletion) -> anyhow::Result<()> {
-	clap_complete::generate(opt.shell, &mut Opt::into_app(), CARGO_PKG_NAME, &mut stdout());
+	clap_complete::generate(opt.shell, &mut Opt::command(), CARGO_PKG_NAME, &mut stdout());
 	Ok(())
 }
 
@@ -238,7 +238,7 @@ fn import_pack(pack: &String, config: &Config, opt: &OptImport) -> anyhow::Resul
 					)?;
 					sticker_file.file_path += ".gif";
 				}
-				(size.width as u32, size.height as u32)
+				(size.width() as u32, size.height() as u32)
 			} else {
 				webp_get_info(&sticker_image)?
 			};

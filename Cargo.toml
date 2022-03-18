@@ -2,7 +2,7 @@
 
 [package]
 name = "mstickereditor"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 license = "Apache-2.0"
 description= "import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix"
@@ -20,7 +20,7 @@ flate2 = "1.0"
 generic-array = { version = "0.14" , features = ["serde"] }
 indicatif = "0.16"
 libwebp = "0.1.2"
-lottie2gif = "0.2.0"
+lottie2gif = "0.3.0"
 monostate = "0.1"
 once_cell = "1.8"
 rayon = "1.5"
