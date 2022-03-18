@@ -25,6 +25,9 @@ use tempfile::NamedTempFile;
 mod config;
 use config::*;
 
+mod sub_commands;
+use sub_commands::*;
+
 mod matrix;
 use matrix::upload_to_matrix;
 
@@ -78,7 +81,10 @@ enum Opt {
 	SetWidget(OptSetWidget),
 
 	/// print shell completion for a given shell
-	ShellCompletion(OptShellCompletion)
+	ShellCompletion(OptShellCompletion),
+
+	/// create the `index.json` from the local stickerpacks for the
+	CreateIndex(create_index::Opt)
 }
 
 type Hash = GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>;
@@ -337,7 +343,8 @@ fn main() {
 	let result = match Opt::parse() {
 		Opt::Import(opt) => import(opt),
 		Opt::SetWidget(opt) => set_widget(opt),
-		Opt::ShellCompletion(opt) => print_shell_completion(opt)
+		Opt::ShellCompletion(opt) => print_shell_completion(opt),
+		Opt::CreateIndex(opt) => create_index::run(opt)
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);
