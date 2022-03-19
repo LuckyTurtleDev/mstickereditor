@@ -1,4 +1,4 @@
-use super::{stickerpicker::StickerWidget, MatrixConfig};
+use crate::{config::MatrixConfig, stickerpicker::StickerWidget};
 use anyhow::bail;
 use serde::Deserialize;
 

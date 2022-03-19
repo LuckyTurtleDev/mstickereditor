@@ -1,4 +1,4 @@
-use super::TelegramConfig;
+use crate::config::TelegramConfig;
 use anyhow::bail;
 use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize};

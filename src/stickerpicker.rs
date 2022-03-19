@@ -106,7 +106,7 @@ pub struct TgStickerPack {
 }
 
 impl StickerPack {
-	pub(crate) fn new(tg_pack: &tg::StickerPack, stickers: &[super::Sticker]) -> Self {
+	pub(crate) fn new(tg_pack: &tg::StickerPack, stickers: &[crate::sub_commands::import::Sticker]) -> Self {
 		Self {
 			title: tg_pack.title.clone(),
 			id: format!("tg_name_{}", tg_pack.name.clone()),
