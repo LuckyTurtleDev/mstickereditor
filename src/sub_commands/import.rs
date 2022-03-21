@@ -193,7 +193,7 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 			}
 
 			let mut sticker = None;
-			if !opt.noupload && database.is_some() {
+			if !opt.noupload {
 				let mut hasher = Sha512::new();
 				hasher.update(&sticker_image);
 				let hash = hasher.finalize();
@@ -208,6 +208,11 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 				);
 
 				let mxc_url = if let Some(value) = database_tree.get(&hash) {
+					pb.println(format!(
+						"  upload sticker {:02} {} skipped; file with this hash was already uploaded",
+						i + 1,
+						tg_sticker.emoji
+					));
 					value.clone()
 				} else {
 					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
@@ -242,17 +247,16 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 	pb.finish();
 
 	// write new entries into the database
-	for sticker in &stickers {
-		let db = database.as_mut().unwrap();
-		let hash_url = HashUrl {
-			hash: sticker.file_hash,
-			url: sticker.mxc_url.clone()
-		};
-		writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
-		// TODO write into database_tree
-	}
-	if database.is_some() {
-		database.unwrap().sync_data()?;
+	if let Some(ref mut db) = database {
+		for sticker in &stickers {
+			let hash_url = HashUrl {
+				hash: sticker.file_hash,
+				url: sticker.mxc_url.clone()
+			};
+			writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
+			// TODO write into database_tree
+		}
+		db.sync_data()?;
 	}
 
 	// save the stickerpack to file
