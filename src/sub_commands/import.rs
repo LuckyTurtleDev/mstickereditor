@@ -247,14 +247,16 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 	pb.finish();
 
 	// write new entries into the database
-	if let Some(ref mut db) = database {
-		for sticker in &stickers {
-			let hash_url = HashUrl {
-				hash: sticker.file_hash,
-				url: sticker.mxc_url.clone()
-			};
-			writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
-			// TODO write into database_tree
+	if !opt.noupload {
+		if let Some(ref mut db) = database {
+			for sticker in &stickers {
+				let hash_url = HashUrl {
+					hash: sticker.file_hash,
+					url: sticker.mxc_url.clone()
+				};
+				writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
+				// TODO write into database_tree
+			}
 		}
 	}
 
