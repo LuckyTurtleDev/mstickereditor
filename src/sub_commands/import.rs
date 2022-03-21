@@ -168,10 +168,10 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 					lottie2gif::convert(
 						sticker,
 						Color {
-							r: 0,
-							g: 0,
-							b: 0,
-							alpha: true
+							r: config.sticker.transparent_color.r,
+							g: config.sticker.transparent_color.g,
+							b: config.sticker.transparent_color.b,
+							alpha: config.sticker.transparent_color.alpha
 						},
 						&mut sticker_image
 					)?;

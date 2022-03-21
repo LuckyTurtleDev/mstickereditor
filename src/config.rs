@@ -15,10 +15,37 @@ pub struct TelegramConfig {
 	pub bot_key: String
 }
 
+#[derive(Debug, Deserialize)]
+pub struct Color {
+	pub r: u8,
+	pub g: u8,
+	pub b: u8,
+	pub alpha: bool
+}
+
+impl Default for Color {
+	fn default() -> Self {
+		Color {
+			r: 0,
+			g: 0,
+			b: 0,
+			alpha: true
+		}
+	}
+}
+
+#[derive(Debug, Default, Deserialize)]
+pub struct Sticker {
+	#[serde(default)]
+	pub transparent_color: Color
+}
+
 #[derive(Deserialize)]
 pub struct Config {
 	pub telegram: TelegramConfig,
-	pub matrix: MatrixConfig
+	pub matrix: MatrixConfig,
+	#[serde(default)]
+	pub sticker: Sticker
 }
 
 pub fn load_config_file() -> anyhow::Result<Config> {
