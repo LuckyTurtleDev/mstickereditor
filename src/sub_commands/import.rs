@@ -256,7 +256,6 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 			writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
 			// TODO write into database_tree
 		}
-		db.sync_data()?;
 	}
 
 	// save the stickerpack to file
