@@ -20,7 +20,7 @@ pub struct StickerPack {
 
 #[derive(Debug, Deserialize)]
 pub struct StickerFile {
-	pub file_path: String
+	file_path: String
 }
 
 #[derive(Deserialize)]
@@ -78,5 +78,9 @@ impl StickerFile {
 		))
 		.send()?
 		.bytes()
+	}
+
+	pub fn get_file_name(self) -> String {
+		self.file_path
 	}
 }

@@ -598,6 +598,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "lottie2webp"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9ec68a19b199feab483023c0bc0b3371f076ee38a293ddf172c3e4f283600c64"
+dependencies = [
+ "rgb",
+ "rlottie",
+ "webp-animation",
+]
+
+[[package]]
 name = "matches"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -668,12 +679,16 @@ dependencies = [
  "indicatif",
  "libwebp",
  "lottie2gif",
+ "lottie2webp",
  "monostate",
  "once_cell",
  "rayon",
+ "rlottie",
  "serde",
  "serde_json",
  "sha2",
+ "strum",
+ "strum_macros",
  "tempfile",
  "toml",
  "url",
@@ -907,6 +922,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustversion"
+version = "1.0.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a0a5f7c728f5d284929a1cccb5bc19884422bfe6ef4d6c409da2c41838983fcf"
+
+[[package]]
 name = "ryu"
 version = "1.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -993,6 +1014,25 @@ name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
+
+[[package]]
+name = "strum"
+version = "0.24.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "063e6045c0e62079840579a7e47a355ae92f60eb74daaf156fb1e84ba164e63f"
+
+[[package]]
+name = "strum_macros"
+version = "0.24.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4faebde00e8ff94316c01800f9054fd2ba77d30d9e922541913051d1d978918b"
+dependencies = [
+ "heck",
+ "proc-macro2",
+ "quote",
+ "rustversion",
+ "syn",
+]
 
 [[package]]
 name = "syn"
@@ -1234,6 +1274,16 @@ checksum = "2fed94beee57daf8dd7d51f2b15dc2bcde92d7a72304cdf662a4371008b71b90"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "webp-animation"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb143802ad63a92a64eefdf1d544604c1d63612458a6facf9926dd5c1033e7b4"
+dependencies = [
+ "libwebp-sys2",
+ "log",
 ]
 
 [[package]]

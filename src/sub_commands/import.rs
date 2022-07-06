@@ -4,13 +4,14 @@ use crate::{
 	matrix::upload_to_matrix,
 	stickerpicker, tg, DATABASE_FILE, PROJECT_DIRS
 };
-use anyhow::{anyhow, Context};
+use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
 use indicatif::{ProgressBar, ProgressStyle};
 use libwebp::WebPGetInfo as webp_get_info;
-use lottie2gif::{Animation, Color};
+use lottie2gif::Color;
+use lottie2webp;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{digest::OutputSizeUser, Digest, Sha512};
@@ -21,7 +22,15 @@ use std::{
 	path::Path,
 	process::exit
 };
+use strum_macros::{Display, EnumString};
 use tempfile::NamedTempFile;
+
+#[derive(Debug, Parser, EnumString, Display)]
+#[strum(serialize_all = "lowercase")]
+pub enum AnimationFormat {
+	Gif,
+	Webp
+}
 
 #[derive(Debug, Parser)]
 pub struct Opt {
@@ -40,7 +49,11 @@ pub struct Opt {
 	/// Do not format the stickers;
 	/// The stickers can may not be shown by a matrix client
 	#[clap(short = 'F', long)]
-	noformat: bool
+	noformat: bool,
+
+	/// format to which the stickers well be converted
+	#[clap(long,default_value_t = AnimationFormat::Webp)]
+	animation_format: AnimationFormat
 }
 
 type Hash = GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>;
@@ -149,33 +162,48 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 			pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 			// get sticker from telegram
-			let mut sticker_file = tg::get_sticker_file(&config.telegram, &tg_sticker)?;
+			let sticker_file = tg::get_sticker_file(&config.telegram, &tg_sticker)?;
 			let mut sticker_image = sticker_file.download(&config.telegram)?;
+			let mut sticker_image_name = sticker_file.get_file_name();
 
 			// convert sticker from lottie to gif if neccessary
-			let (width, height) = if sticker_file.file_path.ends_with(".tgs") {
+			let (width, height) = if sticker_image_name.ends_with(".tgs") {
+				//save to image to file
 				let mut tmp = NamedTempFile::new()?;
 				{
 					let mut out = GzDecoder::new(&mut tmp);
 					out.write_all(&sticker_image)?;
 				}
 				tmp.flush()?;
-				let sticker = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
-				let size = sticker.size();
+				let animation =
+					rlottie::Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+				let size = animation.size();
 				if !opt.noformat {
 					pb.println(format!(" convert sticker {:02} {}", i, tg_sticker.emoji));
 					sticker_image.clear();
-					lottie2gif::convert(
-						sticker,
-						Color {
-							r: config.sticker.transparent_color.r,
-							g: config.sticker.transparent_color.g,
-							b: config.sticker.transparent_color.b,
-							alpha: config.sticker.transparent_color.alpha
+					sticker_image_name.truncate(sticker_image_name.len() - 3);
+					match opt.animation_format {
+						AnimationFormat::Gif => {
+							lottie2gif::convert(
+								animation,
+								Color {
+									r: config.sticker.transparent_color.r,
+									g: config.sticker.transparent_color.g,
+									b: config.sticker.transparent_color.b,
+									alpha: config.sticker.transparent_color.alpha
+								},
+								&mut sticker_image
+							)?;
+							sticker_image_name += "gif";
 						},
-						&mut sticker_image
-					)?;
-					sticker_file.file_path += ".gif";
+						AnimationFormat::Webp => {
+							sticker_image = match lottie2webp::convert(animation) {
+								Ok(value) => value.to_vec(),
+								Err(error) => bail!("error converting tgs to webp: {error:?}")
+							};
+							sticker_image_name += "webp";
+						}
+					}
 				}
 				(size.width as u32, size.height as u32)
 			} else {
@@ -185,7 +213,7 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 			// store file on disk if desired
 			if opt.save {
 				pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
-				let file_path: &Path = sticker_file.file_path.as_ref();
+				let file_path: &Path = sticker_image_name.as_ref();
 				fs::write(
 					Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
 					&sticker_image
@@ -200,9 +228,9 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 
 				let mimetype = format!(
 					"image/{}",
-					Path::new(&sticker_file.file_path)
+					Path::new(&sticker_image_name)
 						.extension()
-						.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", sticker_file.file_path))?
+						.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", sticker_image_name))?
 						.to_str()
 						.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
 				);
@@ -216,7 +244,7 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 					value.clone()
 				} else {
 					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-					let url = upload_to_matrix(&config.matrix, sticker_file.file_path, &sticker_image, &mimetype)?;
+					let url = upload_to_matrix(&config.matrix, sticker_image_name, &sticker_image, &mimetype)?;
 					url
 				};
 
