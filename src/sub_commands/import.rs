@@ -177,7 +177,7 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 					)?;
 					sticker_file.file_path += ".gif";
 				}
-				(size.width() as u32, size.height() as u32)
+				(size.width as u32, size.height as u32)
 			} else {
 				webp_get_info(&sticker_image)?
 			};

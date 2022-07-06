@@ -17,7 +17,7 @@ const CONFIG_FILE: &str = "config.toml";
 const DATABASE_FILE: &str = "uploads";
 const CARGO_PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 static PROJECT_DIRS: Lazy<ProjectDirs> =
-	Lazy::new(|| ProjectDirs::from("de", "lukas1818", CARGO_PKG_NAME).expect("failed to get project dirs"));
+	Lazy::new(|| ProjectDirs::from("dev", "luckyturtle", CARGO_PKG_NAME).expect("failed to get project dirs"));
 
 #[derive(Debug, Parser)]
 enum Opt {
