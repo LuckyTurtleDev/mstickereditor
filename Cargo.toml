@@ -15,6 +15,7 @@ anyhow = "1.0"
 attohttpc = { version = "0.19", features = ["compress", "json", "rustls"], default-features = false }
 clap = { version = "3.0", features = ["derive"] }
 clap_complete = "3.0"
+colored = "2.0"
 directories = "4.0"
 flate2 = "1.0"
 generic-array = { version = "0.14" , features = ["serde"] }

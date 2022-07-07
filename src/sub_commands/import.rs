@@ -6,6 +6,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
+use colored::*;
 use flate2::write::GzDecoder;
 use generic_array::GenericArray;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -154,11 +155,29 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 			.template("[{wide_bar:.cyan/blue}] {pos:>3}/{len} {msg}")
 			.progress_chars("#> ")
 	);
+	if stickerpack.is_video {
+		pb.println(
+			format!(
+				"WARNING: sticker pack {} include video stickers. This are current not supported and will be skipped.",
+				stickerpack.name
+			)
+			.yellow()
+			.to_string()
+		);
+	}
 	let stickers: Vec<Sticker> = stickerpack
 		.stickers
 		.par_iter()
 		.enumerate()
 		.map(|(i, tg_sticker)| {
+			if tg_sticker.is_video {
+				pb.println(
+					format!("    skip Sticker {:02} {},	is a video", i + 1, tg_sticker.emoji)
+						.yellow()
+						.to_string()
+				);
+				return Ok(None);
+			}
 			pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 			// get sticker from telegram
@@ -267,7 +286,8 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 		.filter_map(|res: anyhow::Result<Option<Sticker>>| match res {
 			Ok(sticker) => sticker,
 			Err(err) => {
-				pb.println(format!("ERROR: {:?}", err));
+				pb.println(format!("ERROR: {:?}", err).red().to_string());
+				pb.println("Stickerpack will not be complete".yellow().to_string());
 				None
 			}
 		})
@@ -296,6 +316,8 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 			Path::new(&format!("./{}.json", stickerpack.name)),
 			serde_json::to_string(&pack_json)?
 		)?;
+	} else {
+		println!("{}", "WARNING: stickerpack is empty. Skip save.".yellow())
 	}
 	Ok(())
 }

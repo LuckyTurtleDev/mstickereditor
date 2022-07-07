@@ -7,14 +7,15 @@ use std::borrow::Borrow;
 #[derive(Debug, Deserialize)]
 pub struct Sticker {
 	pub emoji: String,
-	pub file_id: String
+	pub file_id: String,
+	pub is_video: bool
 }
 
 #[derive(Debug, Deserialize)]
 pub struct StickerPack {
 	pub name: String,
 	pub title: String,
-	pub is_animated: bool,
+	pub is_video: bool,
 	pub stickers: Vec<Sticker>
 }
 
