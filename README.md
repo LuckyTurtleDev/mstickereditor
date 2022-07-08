@@ -2,6 +2,7 @@
 [![crates.io](https://img.shields.io/crates/v/mstickereditor.svg)](https://crates.io/crates/mstickereditor)
 [![License Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![AUR package](https://repology.org/badge/version-for-repo/aur/mstickereditor.svg)](https://aur.archlinux.org/packages/mstickereditor/)
+[![more-wallpapers on deps.rs](https://deps.rs/repo/github/LuckyTurtleDev/more-wallpapers/status.svg)](https://deps.rs/repo/github/LuckyTurtleDev/more-wallpapers)
 
 # mstickereditor
 Import sticker packs from telegram, to be used at the [Maunium sticker picker](https://github.com/maunium/stickerpicker) for Matrix
@@ -9,6 +10,29 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 ## Features:
 * import Stickerpacks from Telegram (including animated Stickerspacks)
 * enable Stickerpicker widget for supported Matrix Clients
+
+## Client Support for Animated Sticker:
+#### gif:
+* Element Desktop/Web: full supported
+* Element Android: no autoplay
+* [Schildi](https://schildi.chat/) Desktop/Web: full supported
+* [Schildi](https://schildi.chat/) Android: full supported
+* [Nheko](https://github.com/Nheko-Reborn/nheko): full support to show stickers, but custom stickerpickers are not supported
+* [mautrix-telegram-bridge](https://github.com/mautrix/telegram): full supported
+#### webp:
+* Element Desktop/Web: full supported
+* Element Android: static image only
+* [Schildi](https://schildi.chat/) Desktop/Web: full supported
+* [Schildi](https://schildi.chat/) Android: static image only
+* [Nheko](https://github.com/Nheko-Reborn/nheko): full support to show stickers, but custom stickerpickers are not supported
+* [mautrix-telegram-bridge](https://github.com/mautrix/telegram): static image only
+
+Other clients were not tested.
+(I am not assioted with Schildi, although they also love turtles)
+
+Gif does not support semitransparent pixel, which probably leads to ugly effects,
+if the background of the client does not match the `transparent_color`.
+
 
 ## Requirements:
 * a Stickerpickerserver [msrd0/docker-stickerpicker](https://github.com/msrd0/docker-stickerpicker) or [maunium/stickerpicker](https://github.com/maunium/stickerpicker)
@@ -22,7 +46,7 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 * [ldd](https://clang.llvm.org/) (make)
 
 ### Configuration:
-You need to create the following `config.toml` file and enter you values:
+You need to create the following `config.toml` file and enter your values:
 ```toml
 [telegram]
 bot_key = "YOUR-TELEGRAM-BOT-KEY"
@@ -36,6 +60,10 @@ access_token = "YOUR-MATIRX-ACESSTOKEN"
 transparent_color = { r = 0, g = 0, b = 0, alpha = true }
 ```
 The `[sticker]` section ist optional and can be left out.
+
+`transparent_color` is used as color for semitransparent pixel in `gif`s.
+The field has no effect, if the sticker is not animated or will be converted to `webp` (default).
+`r`,`g`,`b` are 8-bit unsigned integer and must been between 0 and 255 inclusive. 
 
 ## Installation:
 Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
