@@ -12,26 +12,25 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 * enable Stickerpicker widget for supported Matrix Clients
 
 ## Client Support for Animated Sticker:
-#### gif:
-* Element Desktop/Web: full supported
-* Element Android: no autoplay
-* [Schildi](https://schildi.chat/) Desktop/Web: full supported
-* [Schildi](https://schildi.chat/) Android: full supported
-* [Nheko](https://github.com/Nheko-Reborn/nheko): full support to show stickers, but custom stickerpickers are not supported
-* [mautrix-telegram-bridge](https://github.com/mautrix/telegram): full supported
-#### webp:
-* Element Desktop/Web: full supported
-* Element Android: static image only
-* [Schildi](https://schildi.chat/) Desktop/Web: full supported
-* [Schildi](https://schildi.chat/) Android: static image only
-* [Nheko](https://github.com/Nheko-Reborn/nheko): full support to show stickers, but custom stickerpickers are not supported
-* [mautrix-telegram-bridge](https://github.com/mautrix/telegram): static image only
+| Client                         | gif         | webp(default)     | custom stickerpicker | 
+|--------------------------------|-------------|-------------------|----------------------|
+| Element Desktop/Web            | ✅          | ✅                | ✅                   |
+| Element Android                | no autoplay | static image only | ✅                   |
+| [Schildi][Schildi] Desktop/Web | ✅          | ✅                | ✅                   |
+| [Schildi][Schildi] Android     | ✅          | static image only | ✅                   |
+| [Nheko][Nheko]                 | ✅          | ✅                | ❌                   |
+| [mautrix-telegram-bridge]      | ✅          | static image only | ✅                   |
 
 Other clients were not tested.
 (I am not assioted with Schildi, although they also love turtles)
 
 Gif does not support semitransparent pixel, which probably leads to ugly effects,
 if the background of the client does not match the `transparent_color`.
+
+[Schildi]: https://schildi.chat/
+[Nheko]: https://github.com/Nheko-Reborn/nheko
+[mautrix-telegram-bridge]: https://github.com/mautrix/telegram
+
 
 
 ## Requirements:
