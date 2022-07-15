@@ -1,7 +1,9 @@
 use crate::{CONFIG_FILE, PROJECT_DIRS};
 use anyhow::{self, Context};
+use clap::Parser;
 use serde::Deserialize;
 use std::fs;
+use strum_macros::{Display, EnumString};
 
 #[derive(Deserialize)]
 pub struct MatrixConfig {
@@ -34,10 +36,20 @@ impl Default for Color {
 	}
 }
 
+#[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumString, Parser)]
+#[strum(serialize_all = "lowercase")]
+pub enum AnimationFormat {
+	Gif,
+	#[default]
+	Webp
+}
+
 #[derive(Debug, Default, Deserialize)]
 pub struct Sticker {
 	#[serde(default)]
-	pub transparent_color: Color
+	pub transparent_color: Color,
+	#[serde(default)]
+	pub animation_format: AnimationFormat
 }
 
 #[derive(Deserialize)]

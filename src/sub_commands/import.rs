@@ -1,5 +1,5 @@
 use crate::{
-	config::{load_config_file, Config},
+	config::{load_config_file, AnimationFormat, Config},
 	matrix,
 	matrix::upload_to_matrix,
 	stickerpicker, tg, DATABASE_FILE, PROJECT_DIRS
@@ -23,15 +23,7 @@ use std::{
 	path::Path,
 	process::exit
 };
-use strum_macros::{Display, EnumString};
 use tempfile::NamedTempFile;
-
-#[derive(Debug, Parser, EnumString, Display)]
-#[strum(serialize_all = "lowercase")]
-pub enum AnimationFormat {
-	Gif,
-	Webp
-}
 
 #[derive(Debug, Parser)]
 pub struct Opt {
@@ -53,8 +45,8 @@ pub struct Opt {
 	noformat: bool,
 
 	/// format to which the stickers well be converted
-	#[clap(long,default_value_t = AnimationFormat::Webp)]
-	animation_format: AnimationFormat
+	#[clap(long)]
+	animation_format: Option<AnimationFormat>
 }
 
 type Hash = GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>;
@@ -201,7 +193,7 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 					pb.println(format!(" convert sticker {:02} {}", i, tg_sticker.emoji));
 					sticker_image.clear();
 					sticker_image_name.truncate(sticker_image_name.len() - 3);
-					match opt.animation_format {
+					match opt.animation_format.unwrap_or(config.sticker.animation_format) {
 						AnimationFormat::Gif => {
 							lottie2gif::convert(
 								animation,
