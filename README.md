@@ -19,7 +19,7 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 | [Schildi][Schildi] Desktop/Web | ✅          | ✅                | ✅                   |
 | [Schildi][Schildi] Android     | ✅          | static image only | ✅                   |
 | [Nheko][Nheko]                 | ✅          | ✅                | ❌                   |
-| [mautrix-telegram-bridge]      | ✅          | static image only | ✅                   |
+| [mautrix-telegram-bridge]      | ✅          | static image only | -                    |
 
 Other clients were not tested.
 (I am not assioted with Schildi, although they also love turtles)
