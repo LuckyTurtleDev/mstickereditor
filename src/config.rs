@@ -38,6 +38,7 @@ impl Default for Color {
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumString, Parser)]
 #[strum(serialize_all = "lowercase")]
+#[serde(rename_all = "lowercase")]
 pub enum AnimationFormat {
 	Gif,
 	#[default]
