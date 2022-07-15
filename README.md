@@ -56,10 +56,10 @@ homeserver_url = "https://matrix-client.matrix.org"
 access_token = "YOUR-MATIRX-ACESSTOKEN"
 
 [sticker]
-transparent_color = { r = 0, g = 0, b = 0, alpha = true }
+transparent_color = { r = 0, g = 0, b = 0, a = true }
 animation_format = "webp"
 ```
-The `[sticker]` section and every field inside is optional and can be left out.
+The `[sticker]` section and every field inside are optional and can be left out.
 
 `transparent_color` is used as color for semitransparent pixel in `gif`s.
 The field has no effect, if the sticker is not animated or will be converted to `webp` (default).

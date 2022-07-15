@@ -1,39 +1,21 @@
 use crate::{CONFIG_FILE, PROJECT_DIRS};
 use anyhow::{self, Context};
 use clap::Parser;
+use rgb::RGBA;
 use serde::Deserialize;
 use std::fs;
 use strum_macros::{Display, EnumString};
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct MatrixConfig {
 	pub homeserver_url: String,
 	pub user: String,
 	pub access_token: String
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct TelegramConfig {
 	pub bot_key: String
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Color {
-	pub r: u8,
-	pub g: u8,
-	pub b: u8,
-	pub alpha: bool
-}
-
-impl Default for Color {
-	fn default() -> Self {
-		Color {
-			r: 0,
-			g: 0,
-			b: 0,
-			alpha: true
-		}
-	}
 }
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumString, Parser)]
@@ -45,15 +27,24 @@ pub enum AnimationFormat {
 	Webp
 }
 
+fn default_color() -> RGBA<u8, bool> {
+	RGBA {
+		r: 0,
+		g: 0,
+		b: 0,
+		a: true
+	}
+}
+
 #[derive(Debug, Default, Deserialize)]
 pub struct Sticker {
-	#[serde(default)]
-	pub transparent_color: Color,
+	#[serde(default = "default_color")]
+	pub transparent_color: RGBA<u8, bool>,
 	#[serde(default)]
 	pub animation_format: AnimationFormat
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
 	pub telegram: TelegramConfig,
 	pub matrix: MatrixConfig,

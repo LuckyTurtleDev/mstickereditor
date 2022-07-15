@@ -11,8 +11,7 @@ use flate2::write::GzDecoder;
 use generic_array::GenericArray;
 use indicatif::{ProgressBar, ProgressStyle};
 use libwebp::WebPGetInfo as webp_get_info;
-use lottie2gif::Color;
-use lottie2webp;
+use lottieconv::{Animation, Converter};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{digest::OutputSizeUser, Digest, Sha512};
@@ -71,6 +70,7 @@ pub struct Sticker {
 
 pub fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let config = load_config_file()?;
+	println!("{config:?}");
 
 	if !opt.noupload {
 		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
@@ -186,29 +186,20 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 					out.write_all(&sticker_image)?;
 				}
 				tmp.flush()?;
-				let animation =
-					rlottie::Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
 				let size = animation.size();
 				if !opt.noformat {
 					pb.println(format!(" convert sticker {:02} {}", i, tg_sticker.emoji));
 					sticker_image.clear();
 					sticker_image_name.truncate(sticker_image_name.len() - 3);
+					let converter = Converter::new(animation);
 					match opt.animation_format.unwrap_or(config.sticker.animation_format) {
 						AnimationFormat::Gif => {
-							lottie2gif::convert(
-								animation,
-								Color {
-									r: config.sticker.transparent_color.r,
-									g: config.sticker.transparent_color.g,
-									b: config.sticker.transparent_color.b,
-									alpha: config.sticker.transparent_color.alpha
-								},
-								&mut sticker_image
-							)?;
+							converter.gif(config.sticker.transparent_color, &mut sticker_image)?;
 							sticker_image_name += "gif";
 						},
 						AnimationFormat::Webp => {
-							sticker_image = match lottie2webp::convert(animation) {
+							sticker_image = match converter.webp().and_then(Converter::convert) {
 								Ok(value) => value.to_vec(),
 								Err(error) => bail!("error converting tgs to webp: {error:?}")
 							};
