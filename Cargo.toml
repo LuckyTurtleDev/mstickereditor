@@ -4,6 +4,7 @@
 name = "mstickereditor"
 version = "0.2.0"
 edition = "2021"
+rust-version = "1.62"
 license = "Apache-2.0"
 description= "import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix"
 repository = "https://github.com/LuckyTurtleDev/mstickereditor"

@@ -70,7 +70,6 @@ pub struct Sticker {
 
 pub fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let config = load_config_file()?;
-	println!("{config:?}");
 
 	if !opt.noupload {
 		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
