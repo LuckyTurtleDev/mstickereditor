@@ -194,7 +194,9 @@ fn import_pack(pack: &String, config: &Config, opt: &Opt) -> anyhow::Result<()> 
 					let converter = Converter::new(animation);
 					match opt.animation_format.unwrap_or(config.sticker.animation_format) {
 						AnimationFormat::Gif => {
-							converter.gif(config.sticker.transparent_color, &mut sticker_image)?;
+							converter
+								.gif(config.sticker.transparent_color, &mut sticker_image)?
+								.convert()?;
 							sticker_image_name += "gif";
 						},
 						AnimationFormat::Webp => {
