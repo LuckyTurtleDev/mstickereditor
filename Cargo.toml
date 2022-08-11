@@ -36,6 +36,10 @@ tempfile = "3.2"
 toml = "0.5.8"
 url = "2.2"
 
+[features]
+default = ["bin"]
+bin = []
+
 [profile.release]
 lto = true
 opt-level = 3

@@ -1,5 +1,6 @@
+#[cfg(feature = "bin")]
 use crate::tg;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 //###########################################################
 //#### Stickerwidget
@@ -46,7 +47,7 @@ impl StickerWidget {
 //#### Stickerpack
 //###########################################################
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StickerPack {
 	pub title: String,
 	pub id: String,
@@ -57,25 +58,30 @@ pub struct StickerPack {
 	pub stickers: Vec<Sticker>
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TgPack {
 	pub short_name: String,
 	pub hash: String
 }
 
-#[derive(Serialize)]
+fn default_msgtype() -> String {
+	"m.sticker".to_owned()
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Sticker {
 	pub body: String,
 	pub url: String,
 	pub info: StickerInfo,
-	pub msgtype: &'static str,
+	#[serde(default = "default_msgtype")]
+	pub msgtype: String,
 	pub id: String,
 
 	#[serde(rename = "net.maunium.telegram.sticker")]
 	pub tg_sticker: TgSticker
 }
 
-#[derive(Clone, Serialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Metadata {
 	pub w: u32,
 	pub h: u32,
@@ -83,7 +89,7 @@ pub struct Metadata {
 	pub mimetype: String
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct StickerInfo {
 	#[serde(flatten)]
 	pub metadata: Metadata,
@@ -92,20 +98,21 @@ pub struct StickerInfo {
 	pub thumbnail_info: Metadata
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TgSticker {
 	pack: TgStickerPack,
 	id: String,
 	emoticons: Vec<String>
 }
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TgStickerPack {
 	pub id: String,
 	pub short_name: String
 }
 
 impl StickerPack {
+	#[cfg(feature = "bin")]
 	pub(crate) fn new(tg_pack: &tg::StickerPack, stickers: &[crate::sub_commands::import::Sticker]) -> Self {
 		Self {
 			title: tg_pack.title.clone(),
@@ -135,7 +142,7 @@ impl StickerPack {
 							thumbnail_url: sticker.mxc_url.clone(),
 							thumbnail_info: metadata
 						},
-						msgtype: "m.sticker",
+						msgtype: "m.sticker".to_owned(),
 						id: format!("tg_file_id_{}", sticker.file_id),
 						tg_sticker: TgSticker {
 							pack: TgStickerPack {
