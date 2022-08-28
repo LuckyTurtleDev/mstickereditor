@@ -1,4 +1,3 @@
-#[cfg(feature = "bin")]
 use crate::tg;
 use serde::{Deserialize, Serialize};
 

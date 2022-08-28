@@ -677,8 +677,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "mstickereditor"
-version = "0.2.0"
+name = "mstickerlib"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "attohttpc",

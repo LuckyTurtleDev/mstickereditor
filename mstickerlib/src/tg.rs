@@ -1,8 +1,12 @@
-use crate::config::TelegramConfig;
 use anyhow::bail;
 use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize};
 use std::borrow::Borrow;
+
+#[derive(Deserialize)]
+pub struct Config {
+	pub bot_key: String
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Sticker {
@@ -42,7 +46,7 @@ enum TgResponse<T> {
 	}
 }
 
-fn tg_get<T, P, K, V>(tg_config: &TelegramConfig, operation: &str, params: P) -> anyhow::Result<T>
+fn tg_get<T, P, K, V>(tg_config: &Config, operation: &str, params: P) -> anyhow::Result<T>
 where
 	T: DeserializeOwned,
 	P: IntoIterator,
@@ -63,16 +67,16 @@ where
 	Ok(result)
 }
 
-pub fn get_stickerpack(tg_config: &TelegramConfig, name: &str) -> anyhow::Result<StickerPack> {
+pub fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<StickerPack> {
 	tg_get(tg_config, "getStickerSet", [("name", name)])
 }
 
-pub fn get_sticker_file(tg_config: &TelegramConfig, sticker: &Sticker) -> anyhow::Result<StickerFile> {
+pub fn get_sticker_file(tg_config: &Config, sticker: &Sticker) -> anyhow::Result<StickerFile> {
 	tg_get(tg_config, "getFile", [("file_id", &sticker.file_id)])
 }
 
 impl StickerFile {
-	pub fn download(&self, tg_config: &TelegramConfig) -> attohttpc::Result<Vec<u8>> {
+	pub fn download(&self, tg_config: &Config) -> attohttpc::Result<Vec<u8>> {
 		attohttpc::get(format!(
 			"https://api.telegram.org/file/bot{}/{}",
 			tg_config.bot_key, self.file_path

@@ -1,6 +1,13 @@
-use crate::{config::MatrixConfig, stickerpicker::StickerWidget};
+use crate::stickerpicker::StickerWidget;
 use anyhow::bail;
 use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct Config {
+	pub homeserver_url: String,
+	pub user: String,
+	pub access_token: String
+}
 
 #[derive(Debug, Deserialize)]
 pub struct MatrixError {
@@ -21,7 +28,7 @@ pub struct MatrixContentUri {
 	content_uri: String
 }
 
-pub fn set_widget(matrix: &MatrixConfig, sender: String, url: String) -> anyhow::Result<()> {
+pub fn set_widget(matrix: &Config, sender: String, url: String) -> anyhow::Result<()> {
 	let stickerwidget = StickerWidget::new(url, sender);
 	let answer = attohttpc::put(format!(
 		"{}/_matrix/client/r0/user/{}/account_data/m.widgets",
@@ -42,7 +49,7 @@ pub fn set_widget(matrix: &MatrixConfig, sender: String, url: String) -> anyhow:
 	Ok(())
 }
 
-pub fn whoami(matrix: &MatrixConfig) -> anyhow::Result<MatrixWhoami> {
+pub fn whoami(matrix: &Config) -> anyhow::Result<MatrixWhoami> {
 	url::Url::parse(&matrix.homeserver_url)?;
 	let answer = attohttpc::get(format!("{}/_matrix/client/r0/account/whoami", matrix.homeserver_url))
 		.param("access_token", &matrix.access_token)
@@ -59,12 +66,7 @@ pub fn whoami(matrix: &MatrixConfig) -> anyhow::Result<MatrixWhoami> {
 	}
 }
 
-pub fn upload_to_matrix(
-	matrix: &MatrixConfig,
-	filename: String,
-	image_data: &[u8],
-	mimetype: &str
-) -> anyhow::Result<String> {
+pub fn upload_to_matrix(matrix: &Config, filename: String, image_data: &[u8], mimetype: &str) -> anyhow::Result<String> {
 	let answer = attohttpc::post(format!("{}/_matrix/media/r0/upload", matrix.homeserver_url))
 		.params([("access_token", &matrix.access_token), ("filename", &filename)])
 		.header("Content-Type", mimetype)
