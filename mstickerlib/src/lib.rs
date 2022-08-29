@@ -1,6 +1,4 @@
 mod matrix;
-mod sticker;
-mod sub_commands;
 mod tg;
 
-pub mod stickerpicker;
+//mod sub_commands;

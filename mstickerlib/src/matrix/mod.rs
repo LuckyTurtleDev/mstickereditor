@@ -1,6 +1,10 @@
-use crate::stickerpicker::StickerWidget;
 use anyhow::bail;
 use serde::Deserialize;
+
+mod stickerpicker;
+use stickerpicker::StickerWidget;
+mod sticker;
+mod stickerpack;
 
 #[derive(Deserialize)]
 pub struct Config {
