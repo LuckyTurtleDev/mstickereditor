@@ -13,6 +13,7 @@ include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
 [dependencies]
 anyhow = "1.0"
 attohttpc = { version = "0.19", features = ["compress", "json", "rustls"], default-features = false }
+serde-big-array = "0.4"
 clap = { version = "3.0", features = ["derive"] }
 clap_complete = "3.0"
 colored = "2.0"
