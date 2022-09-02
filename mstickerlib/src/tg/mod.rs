@@ -3,28 +3,19 @@ use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize};
 use std::borrow::Borrow;
 
+pub mod sticker;
+use sticker::Sticker;
+pub mod stickerpack;
+use stickerpack::Pack;
+
 #[derive(Deserialize)]
 pub struct Config {
 	pub bot_key: String
 }
 
+/// File storage at Telegram
 #[derive(Debug, Deserialize)]
-pub struct Sticker {
-	pub emoji: String,
-	pub file_id: String,
-	pub is_video: bool
-}
-
-#[derive(Debug, Deserialize)]
-pub struct StickerPack {
-	pub name: String,
-	pub title: String,
-	pub is_video: bool,
-	pub stickers: Vec<Sticker>
-}
-
-#[derive(Debug, Deserialize)]
-pub struct StickerFile {
+pub struct File {
 	file_path: String
 }
 
@@ -67,15 +58,17 @@ where
 	Ok(result)
 }
 
-pub fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<StickerPack> {
+pub fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
 	tg_get(tg_config, "getStickerSet", [("name", name)])
 }
 
-pub fn get_sticker_file(tg_config: &Config, sticker: &Sticker) -> anyhow::Result<StickerFile> {
-	tg_get(tg_config, "getFile", [("file_id", &sticker.file_id)])
+impl Sticker {
+	pub fn get_file(&self, tg_config: &Config) -> anyhow::Result<File> {
+		tg_get(tg_config, "getFile", [("file_id", self.file_id)])
+	}
 }
 
-impl StickerFile {
+impl File {
 	pub fn download(&self, tg_config: &Config) -> attohttpc::Result<Vec<u8>> {
 		attohttpc::get(format!(
 			"https://api.telegram.org/file/bot{}/{}",

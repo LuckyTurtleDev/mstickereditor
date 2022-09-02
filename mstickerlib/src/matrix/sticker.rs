@@ -1,6 +1,6 @@
-use clap::Parser;
 use serde::{Deserialize, Serialize};
-use strum_macros::{Display, EnumString};
+
+use crate::tg::sticker::AnimationFormat;
 
 #[derive(Debug, Deserialize)]
 pub struct Color {
@@ -19,14 +19,6 @@ impl Default for Color {
 			alpha: true
 		}
 	}
-}
-
-#[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumString, Parser)]
-#[strum(serialize_all = "lowercase")]
-pub enum AnimationFormat {
-	#[default]
-	Gif,
-	Webp
 }
 
 #[derive(Debug, Default, Deserialize)]

@@ -2,12 +2,9 @@ use crate::database;
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use colored::*;
-use flate2::write::GzDecoder;
 use generic_array::GenericArray;
 use indicatif::{ProgressBar, ProgressStyle};
 use libwebp::WebPGetInfo as webp_get_info;
-use lottie2gif::Color;
-use lottie2webp;
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{digest::OutputSizeUser, Digest, Sha512};
@@ -18,7 +15,6 @@ use std::{
 	path::Path,
 	process::exit
 };
-use tempfile::NamedTempFile;
 
 use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
 use crate::tg;
@@ -144,49 +140,12 @@ impl StickerPack {
 				pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 				// get sticker from telegram
-				let sticker_file = tg::get_sticker_file(&config.telegram, &tg_sticker)?;
+				let sticker_file = &tg_sticker.get_file(&config.telegram)?;
 				let mut sticker_image = sticker_file.download(&config.telegram)?;
 				let mut sticker_image_name = sticker_file.get_file_name();
 
 				// convert sticker from lottie to gif if neccessary
 				let (width, height) = if sticker_image_name.ends_with(".tgs") {
-					//save to image to file
-					let mut tmp = NamedTempFile::new()?;
-					{
-						let mut out = GzDecoder::new(&mut tmp);
-						out.write_all(&sticker_image)?;
-					}
-					tmp.flush()?;
-					let animation =
-						rlottie::Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
-					let size = animation.size();
-					if !opt.noformat {
-						pb.println(format!(" convert sticker {:02} {}", i, tg_sticker.emoji));
-						sticker_image.clear();
-						sticker_image_name.truncate(sticker_image_name.len() - 3);
-						match opt.animation_format.unwrap_or(config.sticker.animation_format) {
-							AnimationFormat::Gif => {
-								lottie2gif::convert(
-									animation,
-									Color {
-										r: config.sticker.transparent_color.r,
-										g: config.sticker.transparent_color.g,
-										b: config.sticker.transparent_color.b,
-										alpha: config.sticker.transparent_color.alpha
-									},
-									&mut sticker_image
-								)?;
-								sticker_image_name += "gif";
-							},
-							AnimationFormat::Webp => {
-								sticker_image = match lottie2webp::convert(animation) {
-									Ok(value) => value.to_vec(),
-									Err(error) => bail!("error converting tgs to webp: {error:?}")
-								};
-								sticker_image_name += "webp";
-							}
-						}
-					}
 					(size.width as u32, size.height as u32)
 				} else {
 					webp_get_info(&sticker_image)?
