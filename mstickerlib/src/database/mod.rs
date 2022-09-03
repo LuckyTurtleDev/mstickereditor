@@ -7,8 +7,8 @@ mod simple_file;
 pub type Hash = [u8; 64];
 
 pub trait Database {
-	fn check(&self) -> bool;
-	fn add(&self) -> anyhow::Result<()>;
+	fn get(&self, hash: &Hash) -> Option<&String>;
+	fn add(&self, hash: Hash, url: String) -> anyhow::Result<()>;
 }
 
 pub fn hash(value: Vec<u8>) -> Hash {

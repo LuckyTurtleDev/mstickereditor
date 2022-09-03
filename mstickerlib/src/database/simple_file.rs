@@ -1,9 +1,17 @@
 use super::{Database, Hash};
 
-use anyhow;
+use anyhow::{self, Context};
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
-use std::{collections::BTreeMap, fs::File, io, io::BufRead, path::PathBuf};
+use serde_json;
+use std::{
+	collections::BTreeMap,
+	fs,
+	fs::File,
+	io,
+	io::{BufRead, Write},
+	path::Path
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
@@ -13,12 +21,16 @@ struct HashUrl {
 }
 
 pub struct FileDatabase {
-	path: PathBuf,
-	tree: BTreeMap<Hash, String>
+	tree: BTreeMap<Hash, String>,
+	file: fs::File
 }
 
 impl FileDatabase {
-	fn new(path: PathBuf) -> io::Result<FileDatabase> {
+	fn new<P>(path: P) -> io::Result<FileDatabase>
+	where
+		P: AsRef<Path>
+	{
+		let path = path.as_ref();
 		let mut tree = BTreeMap::<Hash, String>::new();
 		match File::open(path) {
 			Ok(file) => {
@@ -45,15 +57,19 @@ impl FileDatabase {
 				return Err(error);
 			}
 		};
-		Ok(FileDatabase { path, tree })
+		let file = fs::OpenOptions::new().write(true).append(true).create(true).open(path)?;
+		Ok(FileDatabase { tree, file })
 	}
 }
 
 impl Database for FileDatabase {
-	fn check(&self) -> bool {
-		unimplemented!()
+	fn get(&self, hash: &Hash) -> Option<&String> {
+		self.tree.get(hash)
 	}
-	fn add(&self) -> anyhow::Result<()> {
-		unimplemented!()
+	fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
+		let hash_url = HashUrl { hash, url };
+		writeln!(self.file, "{}", serde_json::to_string(&hash_url)?)?;
+		self.tree.insert(hash_url.hash, hash_url.url);
+		Ok(())
 	}
 }

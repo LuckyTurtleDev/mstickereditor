@@ -54,5 +54,5 @@ pub fn convert(
 			image_name += "webp";
 		}
 	}
-	unimplemented!()
+	Ok(image)
 }

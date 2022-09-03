@@ -94,20 +94,6 @@ impl StickerPack {
 			fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
 		}
 		let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>, String>::new();
-
-		let database = fs::OpenOptions::new()
-			.write(true)
-			.append(true)
-			.create(true)
-			.open(&database_file)
-			.with_context(|| format!("WARNING: Failed to open or create database {}", database_file.display()));
-		let mut database = match database {
-			Ok(value) => Some(value),
-			Err(error) => {
-				eprintln!("{:?}", error);
-				None
-			}
-		};
 		let pb = ProgressBar::new(stickerpack.stickers.len() as u64);
 		pb.set_style(
 			ProgressStyle::default_bar()
