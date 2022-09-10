@@ -13,9 +13,9 @@ pub struct Config {
 	pub bot_key: String
 }
 
-/// File storage at Telegram
+/// File storage at Telegram; see https://core.telegram.org/bots/api#file
 #[derive(Debug, Deserialize)]
-pub struct File {
+struct File {
 	file_path: String
 }
 
@@ -60,25 +60,4 @@ where
 
 pub fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
 	tg_get(tg_config, "getStickerSet", [("name", name)])
-}
-
-impl Sticker {
-	pub fn get_file(&self, tg_config: &Config) -> anyhow::Result<File> {
-		tg_get(tg_config, "getFile", [("file_id", self.file_id)])
-	}
-}
-
-impl File {
-	pub fn download(&self, tg_config: &Config) -> attohttpc::Result<Vec<u8>> {
-		attohttpc::get(format!(
-			"https://api.telegram.org/file/bot{}/{}",
-			tg_config.bot_key, self.file_path
-		))
-		.send()?
-		.bytes()
-	}
-
-	pub fn get_file_name(self) -> String {
-		self.file_path
-	}
 }

@@ -125,25 +125,22 @@ impl StickerPack {
 				}
 				pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
-				// get sticker from telegram
-				let sticker_file = &tg_sticker.get_file(&config.telegram)?;
-				let mut sticker_image = sticker_file.download(&config.telegram)?;
-				let mut sticker_image_name = sticker_file.get_file_name();
-
+				// download sticker from telegram
+				let image = &tg_sticker.download(&tg_config)?;
 				// convert sticker from lottie to gif if neccessary
-				let (width, height) = if sticker_image_name.ends_with(".tgs") {
-					(size.width as u32, size.height as u32)
+				let image = if image.path.ends_with(".tgs") {
+					image.convert(background_color, format)
 				} else {
-					webp_get_info(&sticker_image)?
+					image
 				};
 
 				// store file on disk if desired
 				if opt.save {
 					pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
-					let file_path: &Path = sticker_image_name.as_ref();
+					let file_path: &Path = image.path.as_ref();
 					fs::write(
 						Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
-						&sticker_image
+						&image.data
 					)?;
 				}
 
