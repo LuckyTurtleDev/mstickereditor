@@ -19,6 +19,8 @@ use std::{
 use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
 use crate::tg;
 
+use crate::image::AnimationFormat;
+
 ///additonal informations about the original telegram sticker pack
 ///stored at `net.maunium.telegram.pack`
 #[derive(Debug, Serialize, Deserialize)]
@@ -39,7 +41,7 @@ pub struct StickerPack {
 
 impl StickerPack {
 	#[cfg(feature = "bin")]
-	pub(crate) fn new(tg_pack: &tg::StickerPack, stickers: &[crate::sub_commands::import::Sticker]) -> Self {
+	pub(crate) fn new(tg_pack: &tg::stickerpack::Pack, stickers: &[crate::sub_commands::import::Sticker]) -> Self {
 		Self {
 			title: tg_pack.title.clone(),
 			id: format!("tg_name_{}", tg_pack.name.clone()),
@@ -84,7 +86,13 @@ impl StickerPack {
 		}
 	}
 
-	fn import_pack<D>(pack: &String, database: Option<D>, tg_config: &tg::Config, opt: &Opt) -> anyhow::Result<()>
+	fn import_pack<D>(
+		pack: &String,
+		database: Option<D>,
+		tg_config: &tg::Config,
+		opt: &Opt,
+		animation_format: AnimationFormat
+	) -> anyhow::Result<()>
 	where
 		D: database::Database
 	{
@@ -126,10 +134,10 @@ impl StickerPack {
 				pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 				// download sticker from telegram
-				let image = &tg_sticker.download(&tg_config)?;
+				let image = tg_sticker.download(&tg_config)?;
 				// convert sticker from lottie to gif if neccessary
 				let image = if image.path.ends_with(".tgs") {
-					image.convert(background_color, format)
+					image.convert_if_tgs(animation_format)?
 				} else {
 					image
 				};
@@ -147,14 +155,14 @@ impl StickerPack {
 				let mut sticker = None;
 				if !opt.noupload {
 					let mut hasher = Sha512::new();
-					hasher.update(&sticker_image);
+					hasher.update(image.data);
 					let hash = hasher.finalize();
 
 					let mimetype = format!(
 						"image/{}",
-						Path::new(&sticker_image_name)
+						Path::new(&image.path)
 							.extension()
-							.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", sticker_image_name))?
+							.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", image.path))?
 							.to_str()
 							.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
 					);

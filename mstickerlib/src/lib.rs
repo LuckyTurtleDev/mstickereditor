@@ -1,4 +1,5 @@
 mod database;
+mod image;
 mod matrix;
 mod tg;
 

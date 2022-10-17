@@ -15,7 +15,7 @@ use crate::{database, matrix};
 #[strum(serialize_all = "lowercase")]
 pub enum AnimationFormat {
 	#[default]
-	Gif,
+	Gif(Color),
 	Webp
 }
 
@@ -41,15 +41,15 @@ impl Image {
 
 	/// convert `tgs` image to webp or gif
 	/// ignore image if its path does not end with `.tgs`
-	pub fn convert_if_tgs(mut self, background_color: lottie2gif::Color, format: AnimationFormat) -> anyhow::Result<Self> {
+	pub fn convert_if_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		if self.path.ends_with(".tgs") {
-			self.convert_tgs(background_color, format)
+			self.convert_tgs(animation_format)
 		} else {
 			Ok(self)
 		}
 	}
 	/// convert `tgs` image to webp or gif
-	pub fn convert_tgs(mut self, background_color: lottie2gif::Color, format: AnimationFormat) -> anyhow::Result<Self> {
+	pub fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		//save to image to file
 		let mut tmp = NamedTempFile::new()?;
 		{
@@ -61,8 +61,8 @@ impl Image {
 		let size = animation.size();
 		self.data.clear();
 		self.path.truncate(self.path.len() - 3);
-		match format {
-			AnimationFormat::Gif => {
+		match animation_format {
+			AnimationFormat::Gif(background_color) => {
 				lottie2gif::convert(animation, background_color, &mut self.data)?;
 				self.path += "gif";
 			},
