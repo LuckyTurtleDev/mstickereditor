@@ -1,4 +1,4 @@
-use crate::database;
+use crate::{database, tg::sticker};
 use anyhow::{anyhow, bail, Context};
 use clap::Parser;
 use colored::*;
@@ -16,7 +16,10 @@ use std::{
 	process::exit
 };
 
-use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
+use super::{
+	sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo},
+	upload_to_matrix
+};
 use crate::tg;
 
 use crate::image::AnimationFormat;
@@ -40,53 +43,7 @@ pub struct StickerPack {
 }
 
 impl StickerPack {
-	#[cfg(feature = "bin")]
-	pub(crate) fn new(tg_pack: &tg::stickerpack::Pack, stickers: &[crate::sub_commands::import::Sticker]) -> Self {
-		Self {
-			title: tg_pack.title.clone(),
-			id: format!("tg_name_{}", tg_pack.name.clone()),
-			tg_pack: TgPack {
-				short_name: tg_pack.name.clone(),
-				hash: String::from("unimplemented!")
-			},
-
-			stickers: stickers
-				.iter()
-				.map(|sticker| {
-					let divisor = (sticker.width as f32 / 256.0)
-						.round()
-						.max((sticker.height as f32 / 256.0).round()) as u32;
-					let metadata = Metadata {
-						w: sticker.width / divisor,
-						h: sticker.height / divisor,
-						size: sticker.file_size,
-						mimetype: sticker.mimetype.clone()
-					};
-					Sticker {
-						body: sticker.emoji.clone(),
-						url: sticker.mxc_url.clone(),
-						info: StickerInfo {
-							metadata: metadata.clone(),
-							thumbnail_url: sticker.mxc_url.clone(),
-							thumbnail_info: metadata
-						},
-						msgtype: "m.sticker".to_owned(),
-						id: format!("tg_file_id_{}", sticker.file_id),
-						tg_sticker: TgInfo {
-							pack: TgPackInfo {
-								id: format!("tg_file_id_{}", sticker.file_id),
-								short_name: tg_pack.name.clone()
-							},
-							id: sticker.file_id.clone(),
-							emoticons: vec![sticker.emoji.clone()]
-						}
-					}
-				})
-				.collect()
-		}
-	}
-
-	fn import_pack<D>(
+	pub fn import_pack<D>(
 		pack: &String,
 		database: Option<D>,
 		tg_config: &tg::Config,
@@ -96,29 +53,29 @@ impl StickerPack {
 	where
 		D: database::Database
 	{
-		let stickerpack = tg::get_stickerpack(tg_config, &pack)?;
-		println!("found Telegram stickerpack {}({})", stickerpack.title, stickerpack.name);
+		let tg_stickerpack = tg::get_stickerpack(tg_config, &pack)?;
+		println!("found Telegram stickerpack {}({})", tg_stickerpack.title, tg_stickerpack.name);
 		if opt.save {
-			fs::create_dir_all(format!("./stickers/{}", stickerpack.name))?;
+			fs::create_dir_all(format!("./stickers/{}", tg_stickerpack.name))?;
 		}
 		let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>, String>::new();
-		let pb = ProgressBar::new(stickerpack.stickers.len() as u64);
+		let pb = ProgressBar::new(tg_stickerpack.stickers.len() as u64);
 		pb.set_style(
 			ProgressStyle::default_bar()
 				.template("[{wide_bar:.cyan/blue}] {pos:>3}/{len} {msg}")
 				.progress_chars("#> ")
 		);
-		if stickerpack.is_video {
+		if tg_stickerpack.is_video {
 			pb.println(
 				format!(
 					"WARNING: sticker pack {} include video stickers. This are current not supported and will be skipped.",
-					stickerpack.name
+					tg_stickerpack.name
 				)
 				.yellow()
 				.to_string()
 			);
 		}
-		let stickers: Vec<Sticker> = stickerpack
+		let stickers: Vec<Sticker> = tg_stickerpack
 			.stickers
 			.par_iter()
 			.enumerate()
@@ -147,7 +104,7 @@ impl StickerPack {
 					pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
 					let file_path: &Path = image.path.as_ref();
 					fs::write(
-						Path::new(&format!("./stickers/{}", stickerpack.name)).join(file_path.file_name().unwrap()),
+						Path::new(&format!("./stickers/{}", tg_stickerpack.name)).join(file_path.file_name().unwrap()),
 						&image.data
 					)?;
 				}
@@ -176,19 +133,37 @@ impl StickerPack {
 						value.clone()
 					} else {
 						pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-						let url = upload_to_matrix(&config.matrix, sticker_image_name, &sticker_image, &mimetype)?;
+						let url = upload_to_matrix(&config.matrix, image.path, image.data, &mimetype)?;
 						url
 					};
 
-					sticker = Some(Sticker {
-						file_hash: hash,
-						mxc_url,
-						file_id: tg_sticker.file_id.clone(),
-						emoji: tg_sticker.emoji.clone(),
-						width,
-						height,
-						file_size: sticker_image.len(),
+					//construct Sticker Struct
+					let tg_info = TgInfo {
+						id: "unimplemented".to_owned(),
+						emoticons: vec![tg_sticker.emoji.to_owned()],
+						pack: TgPackInfo {
+							id: "unimplemented".to_owned(),
+							short_name: tg_stickerpack.name
+						}
+					};
+					let meta_data = Metadata {
+						w: image.width,
+						h: image.height,
+						size: image.data.len(),
 						mimetype
+					};
+					let info = StickerInfo {
+						metadata: meta_data,
+						thumbnail_url: mxc_url,
+						thumbnail_info: meta_data
+					};
+					sticker = Some(Sticker {
+						body: tg_sticker.emoji.clone(),
+						url: mxc_url,
+						info,
+						msgtype: "m.sticker".to_owned(),
+						id: format!("tg_file_id_{}", tg_sticker.file_id),
+						tg_sticker: tg_info
 					});
 				}
 
@@ -207,27 +182,21 @@ impl StickerPack {
 			.collect();
 		pb.finish();
 
-		// write new entries into the database
-		if !opt.noupload {
-			if let Some(ref mut db) = database {
-				for sticker in &stickers {
-					let hash_url = HashUrl {
-						hash: sticker.file_hash,
-						url: sticker.mxc_url.clone()
-					};
-					writeln!(db, "{}", serde_json::to_string(&hash_url)?)?;
-					// TODO write into database_tree
-				}
-			}
-		}
-
 		// save the stickerpack to file
 		if !stickers.is_empty() {
-			println!("save stickerpack {} to {}.json", stickerpack.title, stickerpack.name);
-			let pack_json = stickerpicker::StickerPack::new(&stickerpack, &stickers);
+			println!("save stickerpack {} to {}.json", tg_stickerpack.title, tg_stickerpack.name);
+			let stickerpack = StickerPack {
+				title: tg_stickerpack.title,
+				id: format!("tg_name_{}", tg_stickerpack.name),
+				tg_pack: TgPack {
+					short_name: tg_stickerpack.name,
+					hash: "unimplemented".to_owned()
+				},
+				stickers
+			};
 			fs::write(
-				Path::new(&format!("./{}.json", stickerpack.name)),
-				serde_json::to_string(&pack_json)?
+				Path::new(&format!("./{}.json", tg_stickerpack.name)),
+				serde_json::to_string(&stickerpack)?
 			)?;
 		} else {
 			println!("{}", "WARNING: stickerpack is empty. Skip save.".yellow())
