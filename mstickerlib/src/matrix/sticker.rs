@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::tg::sticker::AnimationFormat;
+use crate::image::AnimationFormat;
 
 #[derive(Debug, Deserialize)]
 pub struct Color {
