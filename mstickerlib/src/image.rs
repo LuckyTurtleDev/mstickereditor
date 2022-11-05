@@ -68,10 +68,7 @@ impl Image {
 				self.path += "gif";
 			},
 			AnimationFormat::Webp => {
-				self.data = match converter.webp().and_then(Converter::convert) {
-					Ok(value) => value.to_vec(),
-					Err(error) => bail!("error converting tgs to webp: {error:?}")
-				};
+				self.data = converter.webp()?.convert()?.to_vec();
 				self.path += "webp";
 			}
 		}
