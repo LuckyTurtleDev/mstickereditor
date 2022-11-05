@@ -1,8 +1,7 @@
-use anyhow::{self, bail};
+use anyhow::{anyhow, bail};
 use clap::Parser;
 use flate2::write::GzDecoder;
-use lottie2gif::Color;
-use lottie2webp;
+use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{io::Write, path::Path};
@@ -11,11 +10,11 @@ use tempfile::NamedTempFile;
 
 use crate::{database, matrix};
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Display, EnumString, Parser)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
 #[strum(serialize_all = "lowercase")]
 pub enum AnimationFormat {
+	Gif(Rgba),
 	#[default]
-	Gif(Color),
 	Webp
 }
 
@@ -57,17 +56,19 @@ impl Image {
 			out.write_all(&self.data)?;
 		}
 		tmp.flush()?;
-		let animation = rlottie::Animation::from_file(tmp.path()).ok_or_else(|| anyhow::anyhow!("Failed to load image"))?;
+		let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+
 		let size = animation.size();
 		self.data.clear();
 		self.path.truncate(self.path.len() - 3);
+		let converter = Converter::new(animation);
 		match animation_format {
 			AnimationFormat::Gif(background_color) => {
-				lottie2gif::convert(animation, background_color, &mut self.data)?;
+				converter.gif(background_color, &mut self.data)?.convert()?;
 				self.path += "gif";
 			},
 			AnimationFormat::Webp => {
-				self.data = match lottie2webp::convert(animation) {
+				self.data = match converter.webp().and_then(Converter::convert) {
 					Ok(value) => value.to_vec(),
 					Err(error) => bail!("error converting tgs to webp: {error:?}")
 				};
