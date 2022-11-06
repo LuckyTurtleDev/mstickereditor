@@ -4,7 +4,7 @@ use serde::{de::DeserializeOwned, Deserialize};
 use std::borrow::Borrow;
 
 pub mod sticker;
-use sticker::Sticker;
+
 pub mod stickerpack;
 use stickerpack::Pack;
 

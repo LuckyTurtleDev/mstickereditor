@@ -1,11 +1,11 @@
-use anyhow::{anyhow, bail};
-use clap::Parser;
+use anyhow::anyhow;
+
 use flate2::write::GzDecoder;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::{io::Write, path::Path};
-use strum_macros::{Display, EnumString};
+use strum_macros::Display;
 use tempfile::NamedTempFile;
 
 use crate::{database, matrix, matrix::Config};
@@ -40,7 +40,7 @@ impl Image {
 
 	/// convert `tgs` image to webp or gif
 	/// ignore image if its path does not end with `.tgs`
-	pub fn convert_if_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+	pub fn convert_if_tgs(self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		if self.path.ends_with(".tgs") {
 			self.convert_tgs(animation_format)
 		} else {

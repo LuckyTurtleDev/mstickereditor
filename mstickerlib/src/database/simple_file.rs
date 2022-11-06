@@ -1,7 +1,7 @@
 use super::{Database, Hash};
 
-use anyhow::{self, Context};
-use attohttpc::header::LOCATION;
+use anyhow::{self};
+
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use serde_json;

@@ -1,19 +1,16 @@
-use crate::{database, tg::sticker};
-use anyhow::{anyhow, bail, Context};
-use clap::Parser;
+use crate::database;
+use anyhow::anyhow;
+
 use colored::*;
-use generic_array::GenericArray;
+
 use indicatif::{ProgressBar, ProgressStyle};
-use libwebp::WebPGetInfo as webp_get_info;
+
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use sha2::{digest::OutputSizeUser, Digest, Sha512};
+use sha2::{Digest, Sha512};
 use std::{
-	collections::BTreeMap,
-	fs::{self, File},
-	io::{self, BufRead, Write},
-	path::Path,
-	process::exit
+	fs::{self},
+	path::Path
 };
 
 use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};

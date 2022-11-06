@@ -1,12 +1,5 @@
-use anyhow::{anyhow, bail};
-use clap::Parser;
-use flate2::write::GzDecoder;
-use std::io::Write;
-use tempfile::NamedTempFile;
-
 use crate::image::Image;
 use serde::Deserialize;
-use strum_macros::{Display, EnumString};
 
 #[derive(Debug, Deserialize)]
 pub struct Sticker {

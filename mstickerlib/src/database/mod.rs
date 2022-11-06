@@ -1,6 +1,6 @@
 use anyhow;
-use generic_array::GenericArray;
-use sha2::{digest::OutputSizeUser, Digest, Sha512};
+
+use sha2::{Digest, Sha512};
 
 mod simple_file;
 
