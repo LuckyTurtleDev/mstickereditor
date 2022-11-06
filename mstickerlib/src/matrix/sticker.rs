@@ -64,9 +64,9 @@ pub struct Metadata {
 ///stored at stickers->net.maunium.telegram.sticker
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TgInfo {
-	pack: TgPackInfo,
-	id: String,
-	emoticons: Vec<String>
+	pub pack: TgPackInfo,
+	pub id: String,
+	pub emoticons: Vec<String>
 }
 
 ///additonal informations about the original telegram stickerpack in witch the sticker was inculded

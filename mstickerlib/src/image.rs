@@ -79,18 +79,18 @@ impl Image {
 
 	///upload image to matrix
 	/// return mxc_url and true if image was uploaded now; false if it was already uploaded before and exist at the database
-	pub(crate) fn upload<D>(&self, matrix_config: &Config, database: Option<D>) -> anyhow::Result<(String, bool)>
+	pub(crate) fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(String, bool)>
 	where
 		D: database::Database
 	{
-		let hash = Lazy::new(|| database::hash(self.data));
+		let hash = Lazy::new(|| database::hash(&self.data));
 		// if database is some and datbase.unwrap().get() is also some
 		let ret = if let Some(url) = database.map(|db| db.get(&*hash)).flatten() {
 			(url.clone(), false)
 		} else {
-			let url = matrix::upload(matrix_config, self.path, &self.data, &self.mime_type()?)?;
+			let url = matrix::upload(matrix_config, &self.path, &self.data, &self.mime_type()?)?;
 			if let Some(db) = database {
-				db.add(*hash, url);
+				db.add(*hash, url.clone());
 			}
 			(url, true)
 		};

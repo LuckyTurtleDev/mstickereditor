@@ -1,6 +1,7 @@
 use super::{Database, Hash};
 
 use anyhow::{self, Context};
+use attohttpc::header::LOCATION;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use serde_json;
@@ -10,7 +11,8 @@ use std::{
 	fs::File,
 	io,
 	io::{BufRead, Write},
-	path::Path
+	path::Path,
+	sync::{Arc, RwLock}
 };
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -21,7 +23,7 @@ struct HashUrl {
 }
 
 pub struct FileDatabase {
-	tree: BTreeMap<Hash, String>,
+	tree: Arc<RwLock<BTreeMap<Hash, String>>>,
 	file: fs::File
 }
 
@@ -58,18 +60,24 @@ impl FileDatabase {
 			}
 		};
 		let file = fs::OpenOptions::new().write(true).append(true).create(true).open(path)?;
-		Ok(FileDatabase { tree, file })
+		Ok(FileDatabase {
+			tree: Arc::new(RwLock::new(tree)),
+			file
+		})
 	}
 }
 
 impl Database for FileDatabase {
-	fn get(&self, hash: &Hash) -> Option<&String> {
-		self.tree.get(hash)
+	fn get(&self, hash: &Hash) -> Option<String> {
+		let lock = self.tree.read().unwrap();
+		let ret = lock.get(hash);
+		ret.map(|f| f.clone())
 	}
 	fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
 		let hash_url = HashUrl { hash, url };
-		writeln!(self.file, "{}", serde_json::to_string(&hash_url)?)?;
-		self.tree.insert(hash_url.hash, hash_url.url);
+		writeln!(&self.file, "{}", serde_json::to_string(&hash_url)?)?;
+		let mut lock = self.tree.write().unwrap();
+		lock.insert(hash_url.hash, hash_url.url);
 		Ok(())
 	}
 }

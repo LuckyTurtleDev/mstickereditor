@@ -16,10 +16,7 @@ use std::{
 	process::exit
 };
 
-use super::{
-	sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo},
-	upload_to_matrix
-};
+use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
 use crate::tg;
 
 use crate::image::AnimationFormat;
@@ -113,8 +110,7 @@ impl StickerPack {
 				let mut sticker = None;
 				if !dryrun {
 					let mut hasher = Sha512::new();
-					hasher.update(image.data);
-					let hash = hasher.finalize();
+					hasher.update(&image.data);
 
 					let mimetype = format!(
 						"image/{}",
@@ -126,7 +122,7 @@ impl StickerPack {
 					);
 
 					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-					let (mxc_url, has_uploded) = image.upload(matrix_config, database)?;
+					let (mxc_url, has_uploded) = image.upload(matrix_config, database.as_ref())?;
 					if !has_uploded {
 						pb.println("upload skipped; file with this hash was already uploaded")
 					}
@@ -137,7 +133,7 @@ impl StickerPack {
 						emoticons: vec![tg_sticker.emoji.to_owned()],
 						pack: TgPackInfo {
 							id: "unimplemented".to_owned(),
-							short_name: tg_stickerpack.name
+							short_name: tg_stickerpack.name.clone()
 						}
 					};
 					let meta_data = Metadata {
@@ -147,8 +143,8 @@ impl StickerPack {
 						mimetype
 					};
 					let info = StickerInfo {
-						metadata: meta_data,
-						thumbnail_url: mxc_url,
+						metadata: meta_data.clone(),
+						thumbnail_url: mxc_url.clone(),
 						thumbnail_info: meta_data
 					};
 					sticker = Some(Sticker {
@@ -183,7 +179,7 @@ impl StickerPack {
 				title: tg_stickerpack.title,
 				id: format!("tg_name_{}", tg_stickerpack.name),
 				tg_pack: TgPack {
-					short_name: tg_stickerpack.name,
+					short_name: tg_stickerpack.name.clone(),
 					hash: "unimplemented".to_owned()
 				},
 				stickers
