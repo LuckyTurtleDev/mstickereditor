@@ -53,14 +53,13 @@ impl StickerPack {
 		animation_format: AnimationFormat
 	) -> anyhow::Result<()>
 	where
-		D: database::Database
+		D: database::Database + Sync + Send
 	{
 		let tg_stickerpack = tg::get_stickerpack(tg_config, &pack)?;
 		println!("found Telegram stickerpack {}({})", tg_stickerpack.title, tg_stickerpack.name);
 		if save_to_disk {
 			fs::create_dir_all(format!("./stickers/{}", tg_stickerpack.name))?;
 		}
-		let mut database_tree = BTreeMap::<GenericArray<u8, <Sha512 as OutputSizeUser>::OutputSize>, String>::new();
 		let pb = ProgressBar::new(tg_stickerpack.stickers.len() as u64);
 		pb.set_style(
 			ProgressStyle::default_bar()
@@ -126,18 +125,11 @@ impl StickerPack {
 							.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
 					);
 
-					let mxc_url = if let Some(value) = database_tree.get(&hash) {
-						pb.println(format!(
-							"  upload sticker {:02} {} skipped; file with this hash was already uploaded",
-							i + 1,
-							tg_sticker.emoji
-						));
-						value.clone()
-					} else {
-						pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-						let url = upload_to_matrix(&matrix_config, image.path, &image.data, &mimetype)?;
-						url
-					};
+					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
+					let (mxc_url, has_uploded) = image.upload(matrix_config, database)?;
+					if !has_uploded {
+						pb.println("upload skipped; file with this hash was already uploaded")
+					}
 
 					//construct Sticker Struct
 					let tg_info = TgInfo {

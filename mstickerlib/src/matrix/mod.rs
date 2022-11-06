@@ -70,11 +70,11 @@ pub fn whoami(matrix: &Config) -> anyhow::Result<MatrixWhoami> {
 	}
 }
 
-pub fn upload_to_matrix(matrix: &Config, filename: String, image_data: &[u8], mimetype: &str) -> anyhow::Result<String> {
+pub fn upload(matrix: &Config, filename: String, data: &[u8], mimetype: &str) -> anyhow::Result<String> {
 	let answer = attohttpc::post(format!("{}/_matrix/media/r0/upload", matrix.homeserver_url))
 		.params([("access_token", &matrix.access_token), ("filename", &filename)])
 		.header("Content-Type", mimetype)
-		.bytes(image_data)
+		.bytes(data)
 		.send()?;
 	if answer.status() != 200 {
 		let status = answer.status();

@@ -8,7 +8,7 @@ use std::{io::Write, path::Path};
 use strum_macros::{Display, EnumString};
 use tempfile::NamedTempFile;
 
-use crate::{database, matrix};
+use crate::{database, matrix, matrix::Config};
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
 #[strum(serialize_all = "lowercase")]
@@ -78,26 +78,22 @@ impl Image {
 	}
 
 	///upload image to matrix
-	pub(crate) fn upload<D>(&self, database: Option<D>) -> anyhow::Result<String>
+	/// return mxc_url and true if image was uploaded now; false if it was already uploaded before and exist at the database
+	pub(crate) fn upload<D>(&self, matrix_config: &Config, database: Option<D>) -> anyhow::Result<(String, bool)>
 	where
 		D: database::Database
 	{
 		let hash = Lazy::new(|| database::hash(self.data));
-		let mxc_url = if let Some(url) = database.map(|db| db.get(&*hash)).flatten() {
-			pb.println(format!(
-				"  upload sticker {:02} {} skipped; file with this hash was already uploaded",
-				i + 1,
-				tg_sticker.emoji
-			));
-			url.clone()
+		// if database is some and datbase.unwrap().get() is also some
+		let ret = if let Some(url) = database.map(|db| db.get(&*hash)).flatten() {
+			(url.clone(), false)
 		} else {
-			pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-			let url = matrix::upload(&config.matrix, self.path, &self.data, &self.mime_type()?)?;
+			let url = matrix::upload(matrix_config, self.path, &self.data, &self.mime_type()?)?;
 			if let Some(db) = database {
 				db.add(*hash, url);
 			}
-			url
+			(url, true)
 		};
-		Ok(mxc_url)
+		Ok(ret)
 	}
 }
