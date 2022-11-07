@@ -19,6 +19,26 @@ const CARGO_PKG_NAME: &'static str = env!("CARGO_PKG_NAME");
 static PROJECT_DIRS: Lazy<ProjectDirs> =
 	Lazy::new(|| ProjectDirs::from("dev", "luckyturtle", CARGO_PKG_NAME).expect("failed to get project dirs"));
 
+pub fn load_config_file() -> anyhow::Result<Config> {
+	let config: Config = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(
+		|| {
+			format!(
+				"Failed to open {}",
+				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
+			)
+		},
+	)?)?;
+	Ok(config)
+}
+
+#[derive(Deserialize)]
+pub struct Config {
+	pub telegram: TelegramConfig,
+	pub matrix: MatrixConfig,
+	#[serde(default)]
+	pub sticker: Sticker
+}
+
 #[derive(Debug, Parser)]
 enum Opt {
 	/// import Stickerpack from telegram
@@ -32,7 +52,7 @@ enum Opt {
 
 	/// create the `index.json` from the local stickerpacks for maunium/stickerpicker.
 	/// not need for msrd0/docker-stickerpicker (do not upload a `index.json` to the s3 bucket!)
-	CreateIndex(create_index::Opt)
+	CreateIndex(create_index::Opt),
 }
 
 fn main() {
@@ -45,7 +65,7 @@ fn main() {
 		Opt::Import(opt) => import::run(opt),
 		Opt::SetWidget(opt) => set_widget::run(opt),
 		Opt::ShellCompletion(opt) => print_shell_completion::run(opt),
-		Opt::CreateIndex(opt) => create_index::run(opt)
+		Opt::CreateIndex(opt) => create_index::run(opt),
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);

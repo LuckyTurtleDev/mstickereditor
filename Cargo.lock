@@ -598,22 +598,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "lottie2gif"
-version = "0.4.0"
+name = "lottieconv"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e7e68fc5684aa7aaf6daee8adbb05648ac6d0dfc2a65a33b8cfe0beb7a7b734"
+checksum = "f8a2a1bae7cf0bdef12fa16c499d17be98d337a2265b7963107ad5f5eedf80eb"
 dependencies = [
  "gif",
- "rgb",
- "rlottie",
-]
-
-[[package]]
-name = "lottie2webp"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ec68a19b199feab483023c0bc0b3371f076ee38a293ddf172c3e4f283600c64"
-dependencies = [
  "rgb",
  "rlottie",
  "webp-animation",
@@ -677,8 +667,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "mstickereditor"
-version = "0.2.0"
+name = "mstickerlib"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "attohttpc",
@@ -690,13 +680,12 @@ dependencies = [
  "generic-array",
  "indicatif",
  "libwebp",
- "lottie2gif",
- "lottie2webp",
+ "lottieconv",
  "monostate",
  "once_cell",
  "rayon",
- "rlottie",
  "serde",
+ "serde-big-array",
  "serde_json",
  "sha2",
  "strum",
@@ -879,6 +868,9 @@ name = "rgb"
 version = "0.8.33"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3b221de559e4a29df3b957eec92bc0de6bc8eaf6ca9cfed43e5e1d67ff65a34"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "ring"
@@ -897,12 +889,13 @@ dependencies = [
 
 [[package]]
 name = "rlottie"
-version = "0.4.1"
+version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41fd36d0f1e2fb044fd210bdcdddb6309fd5a71abacef93638ea790508116bde"
+checksum = "b7b13d542b53bc02141ff7b0ab2a6a8328969459db55a08b9ecd876cb5d07424"
 dependencies = [
  "rgb",
  "rlottie-sys",
+ "serde",
 ]
 
 [[package]]
@@ -968,6 +961,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1578c6245786b9d168c5447eeacfb96856573ca56c9d68fdcf394be134882a47"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde-big-array"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3323f09a748af288c3dc2474ea6803ee81f118321775bffa3ac8f7e65c5e90e7"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -1290,9 +1292,9 @@ dependencies = [
 
 [[package]]
 name = "webp-animation"
-version = "0.5.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb143802ad63a92a64eefdf1d544604c1d63612458a6facf9926dd5c1033e7b4"
+checksum = "b84fb45f4f3836cbd6d6f45cb9d89cb015322c0e56a7363dcccfdcd79d76310e"
 dependencies = [
  "libwebp-sys2",
  "log",
