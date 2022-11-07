@@ -1,6 +1,6 @@
 pub mod database;
-mod image;
+pub mod image;
 pub mod matrix;
-mod tg;
+pub mod tg;
 
 //mod sub_commands;

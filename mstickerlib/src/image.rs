@@ -3,19 +3,57 @@ use anyhow::anyhow;
 use flate2::write::GzDecoder;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::{io::Write, path::Path};
 use strum_macros::Display;
 use tempfile::NamedTempFile;
 
 use crate::{database, matrix, matrix::Config};
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
-#[strum(serialize_all = "lowercase")]
+#[derive(Clone, Debug, Default, Display)]
 pub enum AnimationFormat {
 	Gif(Rgba),
 	#[default]
 	Webp
+}
+
+impl<'de> Deserialize<'de> for AnimationFormat {
+	fn deserialize<D>(deserializer: D) -> Result<AnimationFormat, D::Error>
+	where
+		D: Deserializer<'de>
+	{
+		fn default_color() -> Rgba {
+			Rgba {
+				r: 0,
+				g: 0,
+				b: 0,
+				a: true
+			}
+		}
+
+		#[derive(Clone, Copy, Debug, Default, Deserialize)]
+		#[serde(rename_all = "lowercase")]
+		pub enum AFE {
+			#[default]
+			Gif,
+			Webp
+		}
+
+		#[derive(Clone, Debug, Default, Deserialize)]
+		pub struct AFS {
+			#[serde(default)]
+			animation_format: AFE,
+			#[serde(default = "default_color")]
+			color: Rgba
+		}
+
+		let afs = AFS::deserialize(deserializer)?;
+		let af = match afs.animation_format {
+			AFE::Webp => AnimationFormat::Webp,
+			AFE::Gif => AnimationFormat::Gif(afs.color)
+		};
+		Ok(af)
+	}
 }
 
 /// cotain a image and its meta data
@@ -27,7 +65,7 @@ pub(crate) struct Image {
 }
 
 impl Image {
-	pub fn mime_type(&self) -> anyhow::Result<String> {
+	pub(crate) fn mime_type(&self) -> anyhow::Result<String> {
 		Ok(format!(
 			"image/{}",
 			Path::new(&self.path)
@@ -40,7 +78,7 @@ impl Image {
 
 	/// convert `tgs` image to webp or gif
 	/// ignore image if its path does not end with `.tgs`
-	pub fn convert_if_tgs(self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+	pub(crate) fn convert_if_tgs(self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
 		if self.path.ends_with(".tgs") {
 			self.convert_tgs(animation_format)
 		} else {
@@ -48,7 +86,7 @@ impl Image {
 		}
 	}
 	/// convert `tgs` image to webp or gif
-	pub fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+	pub(crate) fn convert_tgs(mut self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
 		//save to image to file
 		let mut tmp = NamedTempFile::new()?;
 		{
@@ -64,7 +102,7 @@ impl Image {
 		let converter = Converter::new(animation);
 		match animation_format {
 			AnimationFormat::Gif(background_color) => {
-				converter.gif(background_color, &mut self.data)?.convert()?;
+				converter.gif(*background_color, &mut self.data)?.convert()?;
 				self.path += "gif";
 			},
 			AnimationFormat::Webp => {

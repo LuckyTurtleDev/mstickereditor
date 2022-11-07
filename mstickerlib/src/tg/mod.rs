@@ -3,9 +3,9 @@ use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize};
 use std::borrow::Borrow;
 
-pub mod sticker;
+pub(crate) mod sticker;
 
-pub mod stickerpack;
+pub(crate) mod stickerpack;
 use stickerpack::Pack;
 
 #[derive(Deserialize)]

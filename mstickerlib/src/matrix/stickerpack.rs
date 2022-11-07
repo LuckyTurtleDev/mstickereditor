@@ -39,12 +39,12 @@ pub struct StickerPack {
 impl StickerPack {
 	pub fn import_pack<D>(
 		pack: &str,
-		database: Option<D>,
+		database: Option<&D>,
 		tg_config: &tg::Config,
 		dryrun: bool,
 		save_to_disk: bool,
 		matrix_config: &super::Config,
-		animation_format: AnimationFormat
+		animation_format: &AnimationFormat
 	) -> anyhow::Result<()>
 	where
 		D: database::Database + Sync + Send
@@ -119,7 +119,7 @@ impl StickerPack {
 					);
 
 					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-					let (mxc_url, has_uploded) = image.upload(matrix_config, database.as_ref())?;
+					let (mxc_url, has_uploded) = image.upload(matrix_config, database)?;
 					if !has_uploded {
 						pb.println("upload skipped; file with this hash was already uploaded")
 					}

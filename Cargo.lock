@@ -667,6 +667,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "mstickereditor"
+version = "0.2.0"
+dependencies = [
+ "anyhow",
+ "clap 3.2.8",
+ "clap_complete",
+ "directories",
+ "mstickerlib",
+ "once_cell",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sha2",
+ "strum",
+ "strum_macros",
+ "tempfile",
+ "toml",
+ "url",
+]
+
+[[package]]
 name = "mstickerlib"
 version = "0.1.0"
 dependencies = [

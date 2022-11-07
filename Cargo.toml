@@ -1,2 +1,2 @@
 [workspace]
-members = ["mstickerlib"]
+members = ["mstickerlib", "mstickereditor"]
