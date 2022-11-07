@@ -2,7 +2,7 @@ use crate::image::Image;
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
-pub struct Sticker {
+pub(crate) struct Sticker {
 	pub emoji: String,
 	pub file_id: String,
 	//pub thumb: Option<PhotoSize>	TODO

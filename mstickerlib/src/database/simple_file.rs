@@ -22,13 +22,15 @@ struct HashUrl {
 	url: String
 }
 
+/// simple implemtation of the `Database` traid,
+/// with does save data to a file
 pub struct FileDatabase {
 	tree: Arc<RwLock<BTreeMap<Hash, String>>>,
 	file: fs::File
 }
 
 impl FileDatabase {
-	fn new<P>(path: P) -> io::Result<FileDatabase>
+	pub fn new<P>(path: P) -> io::Result<FileDatabase>
 	where
 		P: AsRef<Path>
 	{
@@ -71,7 +73,7 @@ impl Database for FileDatabase {
 	fn get(&self, hash: &Hash) -> Option<String> {
 		let lock = self.tree.read().unwrap();
 		let ret = lock.get(hash);
-		ret.map(|f| f.clone())
+		ret.cloned()
 	}
 	fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
 		let hash_url = HashUrl { hash, url };

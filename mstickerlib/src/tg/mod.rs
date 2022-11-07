@@ -58,6 +58,6 @@ where
 	Ok(result)
 }
 
-pub fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
+pub(crate) fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
 	tg_get(tg_config, "getStickerSet", [("name", name)])
 }

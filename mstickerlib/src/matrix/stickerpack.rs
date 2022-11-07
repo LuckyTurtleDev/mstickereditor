@@ -38,7 +38,7 @@ pub struct StickerPack {
 
 impl StickerPack {
 	pub fn import_pack<D>(
-		pack: &String,
+		pack: &str,
 		database: Option<D>,
 		tg_config: &tg::Config,
 		dryrun: bool,
@@ -49,7 +49,7 @@ impl StickerPack {
 	where
 		D: database::Database + Sync + Send
 	{
-		let tg_stickerpack = tg::get_stickerpack(tg_config, &pack)?;
+		let tg_stickerpack = tg::get_stickerpack(tg_config, pack)?;
 		println!("found Telegram stickerpack {}({})", tg_stickerpack.title, tg_stickerpack.name);
 		if save_to_disk {
 			fs::create_dir_all(format!("./stickers/{}", tg_stickerpack.name))?;
@@ -86,7 +86,7 @@ impl StickerPack {
 				pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 				// download sticker from telegram
-				let image = tg_sticker.download(&tg_config)?;
+				let image = tg_sticker.download(tg_config)?;
 				// convert sticker from lottie to gif if neccessary
 				let image = if image.path.ends_with(".tgs") {
 					image.convert_if_tgs(animation_format)?

@@ -85,12 +85,12 @@ impl Image {
 	{
 		let hash = Lazy::new(|| database::hash(&self.data));
 		// if database is some and datbase.unwrap().get() is also some
-		let ret = if let Some(url) = database.map(|db| db.get(&*hash)).flatten() {
-			(url.clone(), false)
+		let ret = if let Some(url) = database.and_then(|db| db.get(&hash)) {
+			(url, false)
 		} else {
 			let url = matrix::upload(matrix_config, &self.path, &self.data, &self.mime_type()?)?;
 			if let Some(db) = database {
-				db.add(*hash, url.clone());
+				db.add(*hash, url.clone())?;
 			}
 			(url, true)
 		};
