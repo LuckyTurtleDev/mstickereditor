@@ -8,10 +8,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
-use std::{
-	fs::{self},
-	path::Path
-};
+use std::{fs, path::Path};
 
 use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
 use crate::tg;
@@ -37,7 +34,7 @@ pub struct StickerPack {
 }
 
 impl StickerPack {
-	pub fn import_pack<D>(
+	pub async fn import_pack<D>(
 		pack: &str,
 		database: Option<&D>,
 		tg_config: &tg::Config,
@@ -45,7 +42,7 @@ impl StickerPack {
 		save_to_disk: bool,
 		matrix_config: &super::Config,
 		animation_format: &AnimationFormat
-	) -> anyhow::Result<()>
+	) -> anyhow::Result<Self>
 	where
 		D: database::Database + Sync + Send
 	{
@@ -170,24 +167,16 @@ impl StickerPack {
 		pb.finish();
 
 		// save the stickerpack to file
-		if !stickers.is_empty() {
-			println!("save stickerpack {} to {}.json", tg_stickerpack.title, tg_stickerpack.name);
-			let stickerpack = StickerPack {
-				title: tg_stickerpack.title,
-				id: format!("tg_name_{}", tg_stickerpack.name),
-				tg_pack: TgPack {
-					short_name: tg_stickerpack.name.clone(),
-					hash: "unimplemented".to_owned()
-				},
-				stickers
-			};
-			fs::write(
-				Path::new(&format!("./{}.json", tg_stickerpack.name)),
-				serde_json::to_string(&stickerpack)?
-			)?;
-		} else {
-			println!("{}", "WARNING: stickerpack is empty. Skip save.".yellow())
-		}
-		Ok(())
+		println!("save stickerpack {} to {}.json", tg_stickerpack.title, tg_stickerpack.name);
+		let stickerpack = StickerPack {
+			title: tg_stickerpack.title,
+			id: format!("tg_name_{}", tg_stickerpack.name),
+			tg_pack: TgPack {
+				short_name: tg_stickerpack.name.clone(),
+				hash: "unimplemented".to_owned()
+			},
+			stickers
+		};
+		Ok(stickerpack)
 	}
 }

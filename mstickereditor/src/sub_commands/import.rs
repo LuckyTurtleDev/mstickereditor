@@ -2,7 +2,8 @@ use crate::{load_config_file, DATABASE_FILE};
 use anyhow::Context;
 use clap::Parser;
 use mstickerlib::{database::simple_file::FileDatabase, matrix, matrix::stickerpack::StickerPack};
-use std::process::exit;
+use std::{path::Path, process::exit};
+use tokio::fs;
 
 #[derive(Debug, Parser)]
 pub struct Opt {
@@ -24,7 +25,8 @@ pub struct Opt {
 	noformat: bool
 }
 
-pub fn run(mut opt: Opt) -> anyhow::Result<()> {
+#[tokio::main]
+pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let config = load_config_file()?;
 
 	if !opt.dryrun {
@@ -46,7 +48,7 @@ pub fn run(mut opt: Opt) -> anyhow::Result<()> {
 	}
 	let database = FileDatabase::new(&*DATABASE_FILE)?;
 	for pack in packs {
-		StickerPack::import_pack(
+		let matrix_pack = StickerPack::import_pack(
 			&pack,
 			Some(&database),
 			&config.telegram,
@@ -55,7 +57,13 @@ pub fn run(mut opt: Opt) -> anyhow::Result<()> {
 			&config.matrix,
 			&config.sticker
 		)
+		.await
 		.with_context(|| format!("failed to import pack {pack}"))?;
+		fs::write(
+			Path::new(&format!("./{}.json", matrix_pack.tg_pack.short_name)),
+			serde_json::to_string(&matrix_pack)?
+		)
+		.await?;
 	}
 	Ok(())
 }
