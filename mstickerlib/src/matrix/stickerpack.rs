@@ -31,7 +31,9 @@ pub struct StickerPack {
 }
 
 impl StickerPack {
-	async fn helper<D>(
+	//this is ugly
+	#[allow(clippy::too_many_arguments)]
+	async fn import_stickers<D>(
 		i: usize,
 		tg_sticker: &TgSticker,
 		pb: &ProgressBar,
@@ -162,24 +164,20 @@ impl StickerPack {
 			);
 		}
 
-		let sticker_futures = tg_stickerpack
-			.stickers
-			.iter()
-			.enumerate()
-			.map(|(i, tg_sticker)| {
-				Self::helper(
-					i,
-					tg_sticker,
-					&pb,
-					tg_config,
-					animation_format,
-					save_to_disk,
-					&tg_stickerpack,
-					dryrun,
-					matrix_config,
-					database
-				)
-			});
+		let sticker_futures = tg_stickerpack.stickers.iter().enumerate().map(|(i, tg_sticker)| {
+			Self::import_stickers(
+				i,
+				tg_sticker,
+				&pb,
+				tg_config,
+				animation_format,
+				save_to_disk,
+				&tg_stickerpack,
+				dryrun,
+				matrix_config,
+				database
+			)
+		});
 		let stickers: Vec<Sticker> = join_all(sticker_futures)
 			.await
 			.into_iter()
