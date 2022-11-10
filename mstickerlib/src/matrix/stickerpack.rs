@@ -8,7 +8,7 @@ use std::path::Path;
 use tokio::fs;
 
 use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
-use crate::tg;
+use crate::tg::{self, sticker::Sticker as TgSticker};
 
 use crate::image::AnimationFormat;
 
@@ -31,6 +31,103 @@ pub struct StickerPack {
 }
 
 impl StickerPack {
+	async fn helper<D>(
+		i: usize,
+		tg_sticker: &TgSticker,
+		pb: &ProgressBar,
+		tg_config: &tg::Config,
+		animation_format: &AnimationFormat,
+		save_to_disk: bool,
+		tg_stickerpack: &tg::stickerpack::Pack,
+		dryrun: bool,
+		matrix_config: &super::Config,
+		database: Option<&D>
+	) -> anyhow::Result<Option<Sticker>>
+	where
+		D: database::Database + Sync + Send
+	{
+		if tg_sticker.is_video {
+			pb.println(
+				format!("    skip Sticker {:02} {},	is a video", i + 1, tg_sticker.emoji)
+					.yellow()
+					.to_string()
+			);
+			return Ok(None);
+		}
+		pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
+
+		// download sticker from telegram
+		let image = tg_sticker.download(tg_config)?;
+		// convert sticker from lottie to gif if neccessary
+		let image = if image.path.ends_with(".tgs") {
+			image.convert_if_tgs(animation_format)?
+		} else {
+			image
+		};
+
+		// store file on disk if desired
+		if save_to_disk {
+			pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
+			let file_path: &Path = image.path.as_ref();
+			fs::write(
+				Path::new(&format!("./stickers/{}", tg_stickerpack.name)).join(file_path.file_name().unwrap()),
+				&image.data
+			)
+			.await?;
+		}
+
+		let mut sticker = None;
+		if !dryrun {
+			let mimetype = format!(
+				"image/{}",
+				Path::new(&image.path)
+					.extension()
+					.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", image.path))?
+					.to_str()
+					.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
+			);
+
+			pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
+			let (mxc_url, has_uploded) = image.upload(matrix_config, database)?;
+			if !has_uploded {
+				pb.println("upload skipped; file with this hash was already uploaded")
+			}
+
+			//construct Sticker Struct
+			let tg_info = TgInfo {
+				id: "unimplemented".to_owned(),
+				emoticons: vec![tg_sticker.emoji.to_owned()],
+				pack: TgPackInfo {
+					id: "unimplemented".to_owned(),
+					short_name: tg_stickerpack.name.clone()
+				}
+			};
+			let meta_data = Metadata {
+				w: image.width,
+				h: image.height,
+				size: image.data.len(),
+				mimetype
+			};
+			let info = StickerInfo {
+				metadata: meta_data.clone(),
+				thumbnail_url: mxc_url.clone(),
+				thumbnail_info: meta_data
+			};
+			sticker = Some(Sticker {
+				body: tg_sticker.emoji.clone(),
+				url: mxc_url,
+				info,
+				msgtype: "m.sticker".to_owned(),
+				id: format!("tg_file_id_{}", tg_sticker.file_id),
+				tg_sticker: tg_info
+			});
+		}
+
+		pb.println(format!("  finish sticker {:02} {}", i + 1, tg_sticker.emoji));
+		pb.inc(1);
+		Ok(sticker)
+	}
+
 	pub async fn import_pack<D>(
 		pack: &str,
 		database: Option<&D>,
@@ -70,86 +167,19 @@ impl StickerPack {
 			.iter()
 			.enumerate()
 			.map(|(i, tg_sticker)| (i.clone(), tg_sticker))
-			.map(|(i, tg_sticker)| async move {
-				if tg_sticker.is_video {
-					pb.println(
-						format!("    skip Sticker {:02} {},	is a video", i + 1, tg_sticker.emoji)
-							.yellow()
-							.to_string()
-					);
-					return Ok(None);
-				}
-				pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
-
-				// download sticker from telegram
-				let image = tg_sticker.download(tg_config)?;
-				// convert sticker from lottie to gif if neccessary
-				let image = if image.path.ends_with(".tgs") {
-					image.convert_if_tgs(animation_format)?
-				} else {
-					image
-				};
-
-				// store file on disk if desired
-				if save_to_disk {
-					pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
-					let file_path: &Path = image.path.as_ref();
-					fs::write(
-						Path::new(&format!("./stickers/{}", tg_stickerpack.name)).join(file_path.file_name().unwrap()),
-						&image.data
-					).await?;
-				}
-
-				let mut sticker = None;
-				if !dryrun {
-					let mimetype = format!(
-						"image/{}",
-						Path::new(&image.path)
-							.extension()
-							.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", image.path))?
-							.to_str()
-							.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
-					);
-
-					pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-					let (mxc_url, has_uploded) = image.upload(matrix_config, database)?;
-					if !has_uploded {
-						pb.println("upload skipped; file with this hash was already uploaded")
-					}
-
-					//construct Sticker Struct
-					let tg_info = TgInfo {
-						id: "unimplemented".to_owned(),
-						emoticons: vec![tg_sticker.emoji.to_owned()],
-						pack: TgPackInfo {
-							id: "unimplemented".to_owned(),
-							short_name: tg_stickerpack.name.clone()
-						}
-					};
-					let meta_data = Metadata {
-						w: image.width,
-						h: image.height,
-						size: image.data.len(),
-						mimetype
-					};
-					let info = StickerInfo {
-						metadata: meta_data.clone(),
-						thumbnail_url: mxc_url.clone(),
-						thumbnail_info: meta_data
-					};
-					sticker = Some(Sticker {
-						body: tg_sticker.emoji.clone(),
-						url: mxc_url,
-						info,
-						msgtype: "m.sticker".to_owned(),
-						id: format!("tg_file_id_{}", tg_sticker.file_id),
-						tg_sticker: tg_info
-					});
-				}
-
-				pb.println(format!("  finish sticker {:02} {}", i + 1, tg_sticker.emoji));
-				pb.inc(1);
-				Ok(sticker)
+			.map(|(i, tg_sticker)| {
+				Self::helper(
+					i,
+					tg_sticker,
+					&pb,
+					tg_config,
+					animation_format,
+					save_to_disk,
+					&tg_stickerpack,
+					dryrun,
+					matrix_config,
+					database
+				)
 			});
 		let stickers: Vec<Sticker> = join_all(sticker_futures)
 			.await
