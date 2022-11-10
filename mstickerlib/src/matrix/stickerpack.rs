@@ -1,14 +1,11 @@
 use crate::database;
 use anyhow::anyhow;
-
 use colored::*;
-
+use futures_util::future::join_all;
 use indicatif::{ProgressBar, ProgressStyle};
-
-use rayon::prelude::*;
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha512};
-use std::{fs, path::Path};
+use std::path::Path;
+use tokio::fs;
 
 use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
 use crate::tg;
@@ -49,7 +46,7 @@ impl StickerPack {
 		let tg_stickerpack = tg::get_stickerpack(tg_config, pack)?;
 		println!("found Telegram stickerpack {}({})", tg_stickerpack.title, tg_stickerpack.name);
 		if save_to_disk {
-			fs::create_dir_all(format!("./stickers/{}", tg_stickerpack.name))?;
+			fs::create_dir_all(format!("./stickers/{}", tg_stickerpack.name)).await?;
 		}
 		let pb = ProgressBar::new(tg_stickerpack.stickers.len() as u64);
 		pb.set_style(
@@ -67,11 +64,13 @@ impl StickerPack {
 				.to_string()
 			);
 		}
-		let stickers: Vec<Sticker> = tg_stickerpack
+
+		let sticker_futures = tg_stickerpack
 			.stickers
-			.par_iter()
+			.iter()
 			.enumerate()
-			.map(|(i, tg_sticker)| {
+			.map(|(i, tg_sticker)| (i.clone(), tg_sticker))
+			.map(|(i, tg_sticker)| async move {
 				if tg_sticker.is_video {
 					pb.println(
 						format!("    skip Sticker {:02} {},	is a video", i + 1, tg_sticker.emoji)
@@ -98,14 +97,11 @@ impl StickerPack {
 					fs::write(
 						Path::new(&format!("./stickers/{}", tg_stickerpack.name)).join(file_path.file_name().unwrap()),
 						&image.data
-					)?;
+					).await?;
 				}
 
 				let mut sticker = None;
 				if !dryrun {
-					let mut hasher = Sha512::new();
-					hasher.update(&image.data);
-
 					let mimetype = format!(
 						"image/{}",
 						Path::new(&image.path)
@@ -154,7 +150,10 @@ impl StickerPack {
 				pb.println(format!("  finish sticker {:02} {}", i + 1, tg_sticker.emoji));
 				pb.inc(1);
 				Ok(sticker)
-			})
+			});
+		let stickers: Vec<Sticker> = join_all(sticker_futures)
+			.await
+			.into_iter()
 			.filter_map(|res: anyhow::Result<Option<Sticker>>| match res {
 				Ok(sticker) => sticker,
 				Err(err) => {
@@ -172,7 +171,7 @@ impl StickerPack {
 			title: tg_stickerpack.title,
 			id: format!("tg_name_{}", tg_stickerpack.name),
 			tg_pack: TgPack {
-				short_name: tg_stickerpack.name.clone(),
+				short_name: tg_stickerpack.name,
 				hash: "unimplemented".to_owned()
 			},
 			stickers

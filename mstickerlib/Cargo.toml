@@ -19,6 +19,7 @@ clap_complete = "3.0"
 colored = "2.0"
 directories = "4.0"
 flate2 = "1.0"
+futures-util = "0.3.25"
 generic-array = { version = "0.14" , features = ["serde"] }
 indicatif = "0.16"
 libwebp = "0.1.2"
@@ -32,6 +33,7 @@ sha2 = "0.10"
 strum = "0.24"
 strum_macros = "0.24"
 tempfile = "3.2"
+tokio = { version = "1.21", features = ["fs"] }
 toml = "0.5.8"
 url = "2.2"
 
