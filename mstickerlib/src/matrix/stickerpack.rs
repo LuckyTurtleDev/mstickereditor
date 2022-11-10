@@ -166,7 +166,7 @@ impl StickerPack {
 			.stickers
 			.iter()
 			.enumerate()
-			.map(|(i, tg_sticker)| (i.clone(), tg_sticker))
+			.map(|(i, tg_sticker)| (i, tg_sticker))
 			.map(|(i, tg_sticker)| {
 				Self::helper(
 					i,
