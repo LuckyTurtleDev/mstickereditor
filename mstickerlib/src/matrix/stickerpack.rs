@@ -59,10 +59,10 @@ impl StickerPack {
 		pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 		// download sticker from telegram
-		let image = tg_sticker.download(tg_config)?;
+		let image = tg_sticker.download(tg_config).await?;
 		// convert sticker from lottie to gif if neccessary
 		let image = if image.path.ends_with(".tgs") {
-			image.convert_if_tgs(animation_format)?
+			image.convert_if_tgs(animation_format).await?
 		} else {
 			image
 		};

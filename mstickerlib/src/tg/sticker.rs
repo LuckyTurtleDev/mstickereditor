@@ -1,4 +1,4 @@
-use crate::image::Image;
+use crate::{image::Image, CLIENT};
 use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
@@ -12,14 +12,12 @@ pub(crate) struct Sticker {
 }
 
 impl Sticker {
-	pub(crate) fn download(&self, tg_config: &super::Config) -> anyhow::Result<Image> {
+	pub(crate) async fn download(&self, tg_config: &super::Config) -> anyhow::Result<Image> {
 		let file: super::File = super::tg_get(tg_config, "getFile", [("file_id", &self.file_id)])?;
-		let data = attohttpc::get(format!(
+		let data = CLIENT.get().await.get(format!(
 			"https://api.telegram.org/file/bot{}/{}",
 			tg_config.bot_key, file.file_path
-		))
-		.send()?
-		.bytes()?;
+		)).send().await?.bytes().await?.to_vec();
 		Ok(Image {
 			data,
 			path: file.file_path,

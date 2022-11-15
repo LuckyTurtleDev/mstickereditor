@@ -78,20 +78,20 @@ impl Image {
 
 	/// convert `tgs` image to webp or gif
 	/// ignore image if its path does not end with `.tgs`
-	pub(crate) fn convert_if_tgs(self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
+	pub(crate) async fn convert_if_tgs(self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
 		if self.path.ends_with(".tgs") {
-			self.convert_tgs(animation_format)
+			self.convert_tgs(animation_format).await
 		} else {
 			Ok(self)
 		}
 	}
 	/// convert `tgs` image to webp or gif
-	pub(crate) fn convert_tgs(mut self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
+	pub(crate) async fn convert_tgs(mut self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
 		//save to image to file
 		let mut tmp = NamedTempFile::new()?;
 		{
 			let mut out = GzDecoder::new(&mut tmp);
-			out.write_all(&self.data)?;
+			out.write_all(&self.data)?; //dodo async
 		}
 		tmp.flush()?;
 		let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
