@@ -7,6 +7,7 @@ use serde::{Deserialize, Deserializer};
 use std::{io::Write, path::Path};
 use strum_macros::Display;
 use tempfile::NamedTempFile;
+use tokio::task::spawn_blocking;
 
 use crate::{database, matrix, matrix::Config};
 
@@ -78,7 +79,7 @@ impl Image {
 
 	/// convert `tgs` image to webp or gif
 	/// ignore image if its path does not end with `.tgs`
-	pub(crate) async fn convert_if_tgs(self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
+	pub(crate) async fn convert_if_tgs(self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		if self.path.ends_with(".tgs") {
 			self.convert_tgs(animation_format).await
 		} else {
@@ -86,33 +87,34 @@ impl Image {
 		}
 	}
 	/// convert `tgs` image to webp or gif
-	pub(crate) async fn convert_tgs(mut self, animation_format: &AnimationFormat) -> anyhow::Result<Self> {
+	pub(crate) async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		//save to image to file
 		let mut tmp = NamedTempFile::new()?;
-		{
-			let mut out = GzDecoder::new(&mut tmp);
-			out.write_all(&self.data)?; //dodo async
-		}
+		GzDecoder::new(&mut tmp).write_all(&self.data)?;
 		tmp.flush()?;
-		let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+		spawn_blocking(move || {
+			let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
 
-		let size = animation.size();
-		self.data.clear();
-		self.path.truncate(self.path.len() - 3);
-		let converter = Converter::new(animation);
-		match animation_format {
-			AnimationFormat::Gif(background_color) => {
-				converter.gif(*background_color, &mut self.data)?.convert()?;
-				self.path += "gif";
-			},
-			AnimationFormat::Webp => {
-				self.data = converter.webp()?.convert()?.to_vec();
-				self.path += "webp";
+			let size = animation.size();
+			self.data.clear();
+			self.path.truncate(self.path.len() - 3);
+			let converter = Converter::new(animation);
+			match animation_format {
+				AnimationFormat::Gif(background_color) => {
+					converter.gif(background_color, &mut self.data)?.convert()?;
+					self.path += "gif";
+				},
+				AnimationFormat::Webp => {
+					self.data = converter.webp()?.convert()?.to_vec();
+					self.path += "webp";
+				}
 			}
-		}
-		self.width = size.width as u32;
-		self.height = size.height as u32;
-		Ok(self)
+			self.width = size.width as u32;
+			self.height = size.height as u32;
+
+			Ok(self)
+		})
+		.await?
 	}
 
 	///upload image to matrix
