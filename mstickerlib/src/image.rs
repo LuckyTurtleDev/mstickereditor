@@ -3,11 +3,12 @@ use anyhow::anyhow;
 use flate2::write::GzDecoder;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
+use rayon;
 use serde::{Deserialize, Deserializer};
 use std::{io::Write, path::Path};
 use strum_macros::Display;
 use tempfile::NamedTempFile;
-use tokio::task::spawn_blocking;
+use tokio;
 
 use crate::{database, matrix, matrix::Config};
 
@@ -92,27 +93,43 @@ impl Image {
 		let mut tmp = NamedTempFile::new()?;
 		GzDecoder::new(&mut tmp).write_all(&self.data)?;
 		tmp.flush()?;
-		spawn_blocking(move || {
-			let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
 
-			let size = animation.size();
-			self.data.clear();
-			self.path.truncate(self.path.len() - 3);
-			let converter = Converter::new(animation);
-			match animation_format {
-				AnimationFormat::Gif(background_color) => {
-					converter.gif(background_color, &mut self.data)?.convert()?;
-					self.path += "gif";
-				},
-				AnimationFormat::Webp => {
-					self.data = converter.webp()?.convert()?.to_vec();
-					self.path += "webp";
+		fn rayon_run<F, T>(callback: F) -> T
+		where
+			F: FnOnce() -> T + Send,
+			T: Send,
+			for<'a> &'a mut T: Send
+		{
+			let mut result: Option<T> = None;
+			rayon::scope(|s| {
+				s.spawn(|_| result = Some(callback()));
+			});
+			result.unwrap()
+		}
+
+		tokio::task::spawn_blocking(move || {
+			rayon_run(move || {
+				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+
+				let size = animation.size();
+				self.data.clear();
+				self.path.truncate(self.path.len() - 3);
+				let converter = Converter::new(animation);
+				match animation_format {
+					AnimationFormat::Gif(background_color) => {
+						converter.gif(background_color, &mut self.data)?.convert()?;
+						self.path += "gif";
+					},
+					AnimationFormat::Webp => {
+						self.data = converter.webp()?.convert()?.to_vec();
+						self.path += "webp";
+					}
 				}
-			}
-			self.width = size.width as u32;
-			self.height = size.height as u32;
+				self.width = size.width as u32;
+				self.height = size.height as u32;
 
-			Ok(self)
+				Ok(self)
+			})
 		})
 		.await?
 	}
