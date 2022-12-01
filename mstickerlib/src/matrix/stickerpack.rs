@@ -90,7 +90,7 @@ impl StickerPack {
 			);
 
 			pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
-			let (mxc_url, has_uploded) = image.upload(matrix_config, database)?;
+			let (mxc_url, has_uploded) = image.upload(matrix_config, database).await?;
 			if !has_uploded {
 				pb.println("upload skipped; file with this hash was already uploaded")
 			}
@@ -142,7 +142,7 @@ impl StickerPack {
 	where
 		D: database::Database + Sync + Send
 	{
-		let tg_stickerpack = tg::get_stickerpack(tg_config, pack)?;
+		let tg_stickerpack = tg::get_stickerpack(tg_config, pack).await?;
 		println!("found Telegram stickerpack {}({})", tg_stickerpack.title, tg_stickerpack.name);
 		if save_to_disk {
 			fs::create_dir_all(format!("./stickers/{}", tg_stickerpack.name)).await?;

@@ -30,7 +30,9 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let config = load_config_file()?;
 
 	if !opt.dryrun {
-		matrix::whoami(&config.matrix).expect("Error connecting to Matrix homeserver");
+		matrix::whoami(&config.matrix)
+			.await
+			.expect("Error connecting to Matrix homeserver");
 	}
 	let mut packs: Vec<String> = Vec::new();
 	while let Some(pack) = opt.packs.pop() {

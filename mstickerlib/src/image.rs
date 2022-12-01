@@ -136,7 +136,7 @@ impl Image {
 
 	///upload image to matrix
 	/// return mxc_url and true if image was uploaded now; false if it was already uploaded before and exist at the database
-	pub(crate) fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(String, bool)>
+	pub(crate) async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(String, bool)>
 	where
 		D: database::Database
 	{
@@ -145,7 +145,7 @@ impl Image {
 		let ret = if let Some(url) = database.and_then(|db| db.get(&hash)) {
 			(url, false)
 		} else {
-			let url = matrix::upload(matrix_config, &self.path, &self.data, &self.mime_type()?)?;
+			let url = matrix::upload(matrix_config, &self.path, &self.data, &self.mime_type()?).await?;
 			if let Some(db) = database {
 				db.add(*hash, url.clone())?;
 			}

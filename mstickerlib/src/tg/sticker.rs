@@ -13,7 +13,7 @@ pub(crate) struct Sticker {
 
 impl Sticker {
 	pub(crate) async fn download(&self, tg_config: &super::Config) -> anyhow::Result<Image> {
-		let file: super::File = super::tg_get(tg_config, "getFile", [("file_id", &self.file_id)])?;
+		let file: super::File = super::tg_get(tg_config, "getFile", [("file_id", &self.file_id)]).await?;
 		let data = CLIENT
 			.get()
 			.await

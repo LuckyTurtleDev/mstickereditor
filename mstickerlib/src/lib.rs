@@ -21,7 +21,7 @@ struct Client {
 }
 
 impl Client {
-	async fn get(&self) -> &reqwest::Client {
+	pub(crate) async fn get(&self) -> &reqwest::Client {
 		// safety: this method ensures that the client is set from None to Some exactly once, and the
 		// value is never altered thereafter. Once a value was set, all references to that value are
 		// valid for the lifetime of self.

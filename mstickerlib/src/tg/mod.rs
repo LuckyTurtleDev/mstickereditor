@@ -1,7 +1,7 @@
+use crate::CLIENT;
 use anyhow::bail;
 use monostate::MustBe;
-use serde::{de::DeserializeOwned, Deserialize};
-use std::borrow::Borrow;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 pub(crate) mod sticker;
 
@@ -37,18 +37,21 @@ enum TgResponse<T> {
 	}
 }
 
-fn tg_get<T, P, K, V>(tg_config: &Config, operation: &str, params: P) -> anyhow::Result<T>
+async fn tg_get<T, P>(tg_config: &Config, operation: &str, params: P) -> anyhow::Result<T>
 where
 	T: DeserializeOwned,
-	P: IntoIterator,
-	P::Item: Borrow<(K, V)>,
-	K: AsRef<str>,
-	V: ToString
+	P: Serialize,
+	P: Sized
 {
-	let resp: TgResponse<T> = attohttpc::get(format!("https://api.telegram.org/bot{}/{}", tg_config.bot_key, operation))
-		.params(params)
-		.send()?
-		.json()?;
+	let resp: TgResponse<T> = CLIENT
+		.get()
+		.await
+		.get(format!("https://api.telegram.org/bot{}/{}", tg_config.bot_key, operation))
+		.query(&params)
+		.send()
+		.await?
+		.json()
+		.await?;
 	let result = match resp {
 		TgResponse::Ok { result, .. } => result,
 		TgResponse::Err {
@@ -58,6 +61,6 @@ where
 	Ok(result)
 }
 
-pub(crate) fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
-	tg_get(tg_config, "getStickerSet", [("name", name)])
+pub(crate) async fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
+	tg_get(tg_config, "getStickerSet", [("name", name)]).await
 }
