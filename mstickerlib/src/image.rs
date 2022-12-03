@@ -89,11 +89,6 @@ impl Image {
 	}
 	/// convert `tgs` image to webp or gif
 	pub(crate) async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
-		//save to image to file
-		let mut tmp = NamedTempFile::new()?;
-		GzDecoder::new(&mut tmp).write_all(&self.data)?;
-		tmp.flush()?;
-
 		fn rayon_run<F, T>(callback: F) -> T
 		where
 			F: FnOnce() -> T + Send,
@@ -109,6 +104,11 @@ impl Image {
 
 		tokio::task::spawn_blocking(move || {
 			rayon_run(move || {
+				//save to image to file
+				let mut tmp = NamedTempFile::new()?;
+				GzDecoder::new(&mut tmp).write_all(&self.data)?;
+				tmp.flush()?;
+
 				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
 
 				let size = animation.size();
