@@ -41,18 +41,17 @@ pub struct Config {
 #[derive(Debug, Parser)]
 enum Opt {
 	/// import Stickerpack from telegram
-	Import(import::Opt) /*
-
+	Import(import::Opt),
+	/*
 						/// enable a custom sticker picker widget in a supported Matirx client
 						SetWidget(set_widget::Opt),
 
 						/// print shell completion for a given shell
 						ShellCompletion(print_shell_completion::Opt),
-
+*/
 						/// create the `index.json` from the local stickerpacks for maunium/stickerpicker.
 						/// not need for msrd0/docker-stickerpicker (do not upload a `index.json` to the s3 bucket!)
 						CreateIndex(create_index::Opt),
-						*/
 }
 
 fn main() {
@@ -62,11 +61,13 @@ fn main() {
 		exit(1);
 	}
 	let result = match Opt::parse() {
-		Opt::Import(opt) => import::run(opt) /*
+		Opt::Import(opt) => import::run(opt),
+		/*
 											 Opt::SetWidget(opt) => set_widget::run(opt),
 											 Opt::ShellCompletion(opt) => print_shell_completion::run(opt),
-											 Opt::CreateIndex(opt) => create_index::run(opt),
 											 */
+											 Opt::CreateIndex(opt) => create_index::run(opt),
+											 
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);
