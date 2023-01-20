@@ -18,6 +18,10 @@ static PROJECT_DIRS: Lazy<ProjectDirs> =
 	Lazy::new(|| ProjectDirs::from("dev", "luckyturtle", CARGO_PKG_NAME).expect("failed to get project dirs"));
 static DATABASE_FILE: Lazy<PathBuf> = Lazy::new(|| PROJECT_DIRS.data_dir().join("uploads"));
 
+pub fn new_current_thread_runtime() -> Result<tokio::runtime::Runtime, std::io::Error> {
+	tokio::runtime::Builder::new_current_thread().worker_threads(1).build()
+}
+
 pub fn load_config_file() -> anyhow::Result<Config> {
 	let config: Config = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(
 		|| {
@@ -42,16 +46,14 @@ pub struct Config {
 enum Opt {
 	/// import Stickerpack from telegram
 	Import(import::Opt),
-	/*
-						/// enable a custom sticker picker widget in a supported Matirx client
-						SetWidget(set_widget::Opt),
-
-						/// print shell completion for a given shell
-						ShellCompletion(print_shell_completion::Opt),
-*/
-						/// create the `index.json` from the local stickerpacks for maunium/stickerpicker.
-						/// not need for msrd0/docker-stickerpicker (do not upload a `index.json` to the s3 bucket!)
-						CreateIndex(create_index::Opt),
+	/// enable a custom sticker picker widget in a supported Matirx client
+	/// ⚠️_Warning: make sure you have send a sticker (since creating your matrix account) using the Element stickerpicker, before excuting this subcommand or the widget will not work.
+	SetWidget(set_widget::Opt),
+	/// print shell completion for a given shell
+	ShellCompletion(print_shell_completion::Opt),
+	/// create the `index.json` from the local stickerpacks for maunium/stickerpicker.
+	/// not need for msrd0/docker-stickerpicker (do not upload a `index.json` to the s3 bucket!)
+	CreateIndex(create_index::Opt)
 }
 
 fn main() {
@@ -62,12 +64,9 @@ fn main() {
 	}
 	let result = match Opt::parse() {
 		Opt::Import(opt) => import::run(opt),
-		/*
-											 Opt::SetWidget(opt) => set_widget::run(opt),
-											 Opt::ShellCompletion(opt) => print_shell_completion::run(opt),
-											 */
-											 Opt::CreateIndex(opt) => create_index::run(opt),
-											 
+		Opt::SetWidget(opt) => set_widget::run(opt),
+		Opt::ShellCompletion(opt) => print_shell_completion::run(opt),
+		Opt::CreateIndex(opt) => create_index::run(opt)
 	};
 	if let Err(error) = result {
 		eprintln!("{:?}", error);

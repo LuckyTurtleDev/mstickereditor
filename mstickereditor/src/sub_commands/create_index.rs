@@ -1,9 +1,8 @@
+use crate::load_config_file;
 use anyhow::{bail, Context};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 use std::fs::read_dir;
-use crate::Config;
-use crate::load_config_file;
 
 #[derive(Debug, Parser)]
 pub struct Opt {
