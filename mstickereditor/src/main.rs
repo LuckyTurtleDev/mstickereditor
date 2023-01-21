@@ -26,11 +26,17 @@ pub fn load_config_file() -> anyhow::Result<Config> {
 	let config: Config = toml::from_str(&fs::read_to_string(PROJECT_DIRS.config_dir().join(CONFIG_FILE)).with_context(
 		|| {
 			format!(
-				"Failed to open {}",
-				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_str().unwrap()
+				"Failed to open config file {:?}",
+				PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_string_lossy()
 			)
 		}
-	)?)?;
+	)?)
+	.with_context(|| {
+		format!(
+			"Failed to prase config file {:?}",
+			PROJECT_DIRS.config_dir().join(CONFIG_FILE).to_string_lossy()
+		)
+	})?;
 	Ok(config)
 }
 
@@ -38,7 +44,7 @@ pub fn load_config_file() -> anyhow::Result<Config> {
 pub struct Config {
 	pub telegram: tg::Config,
 	pub matrix: matrix::Config,
-	//#[serde(default)]
+	#[serde(default)]
 	pub sticker: AnimationFormat
 }
 

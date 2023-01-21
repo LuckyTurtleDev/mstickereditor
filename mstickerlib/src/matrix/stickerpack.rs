@@ -130,6 +130,7 @@ impl StickerPack {
 		Ok(sticker)
 	}
 
+	/// import a telegram sticker pack
 	pub async fn import_pack<D>(
 		pack: &str,
 		database: Option<&D>,
