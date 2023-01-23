@@ -63,7 +63,7 @@ pub async fn whoami(matrix: &Config) -> anyhow::Result<Whoami> {
 		.get()
 		.await
 		.get(format!("{}/_matrix/client/r0/account/whoami", matrix.homeserver_url))
-		.query(&["access_token", &matrix.access_token])
+		.query(&[("access_token", &matrix.access_token)])
 		.send()
 		.await?;
 	if answer.status() != 200 {
