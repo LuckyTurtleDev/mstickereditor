@@ -11,6 +11,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}}"
       - uses: msrd0/install-rlottie-action@v1
         env:
           pkgver: "0.2"
