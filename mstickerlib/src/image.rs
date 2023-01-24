@@ -79,15 +79,6 @@ impl Image {
 	}
 
 	/// convert `tgs` image to webp or gif
-	/// ignore image if its path does not end with `.tgs`
-	pub(crate) async fn convert_if_tgs(self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
-		if self.path.ends_with(".tgs") {
-			self.convert_tgs(animation_format).await
-		} else {
-			Ok(self)
-		}
-	}
-	/// convert `tgs` image to webp or gif
 	pub(crate) async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		fn rayon_run<F, T>(callback: F) -> T
 		where

@@ -34,6 +34,9 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			.await
 			.expect("Error connecting to Matrix homeserver");
 	}
+	let animation_fromat = if opt.dryrun {
+		None 
+	} else { Some(&config.sticker)};
 	let mut packs: Vec<String> = Vec::new();
 	while let Some(pack) = opt.packs.pop() {
 		let mut id = pack.strip_prefix("https://t.me/addstickers/");
@@ -50,6 +53,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		};
 	}
 	let database = FileDatabase::new(&*DATABASE_FILE)?;
+
 	for pack in packs {
 		let matrix_pack = StickerPack::import_pack(
 			&pack,
@@ -58,7 +62,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			opt.dryrun,
 			opt.save,
 			&config.matrix,
-			&config.sticker
+			animation_fromat
 		)
 		.await
 		.with_context(|| format!("failed to import pack {pack}"))?;

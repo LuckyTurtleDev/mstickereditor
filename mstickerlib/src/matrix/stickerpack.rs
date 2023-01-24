@@ -38,7 +38,7 @@ impl StickerPack {
 		tg_sticker: &TgSticker,
 		pb: &ProgressBar,
 		tg_config: &tg::Config,
-		animation_format: &AnimationFormat,
+		animation_format: Option<&AnimationFormat>,
 		save_to_disk: bool,
 		tg_stickerpack: &tg::stickerpack::Pack,
 		dryrun: bool,
@@ -59,13 +59,13 @@ impl StickerPack {
 		pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
 
 		// download sticker from telegram
-		let image = tg_sticker.download(tg_config).await?;
+		let mut image = tg_sticker.download(tg_config).await?;
 		// convert sticker from lottie to gif if neccessary
-		let image = if image.path.ends_with(".tgs") {
-			image.convert_if_tgs(animation_format.to_owned()).await?
-		} else {
-			image
-		};
+		if image.path.ends_with(".tgs") {
+			if let Some(format) = animation_format{
+				image = image.convert_tgs(format.to_owned()).await?;
+			}
+		}
 
 		// store file on disk if desired
 		if save_to_disk {
@@ -138,7 +138,7 @@ impl StickerPack {
 		dryrun: bool,
 		save_to_disk: bool,
 		matrix_config: &super::Config,
-		animation_format: &AnimationFormat
+		animation_format: Option<&AnimationFormat>
 	) -> anyhow::Result<Self>
 	where
 		D: database::Database + Sync + Send
