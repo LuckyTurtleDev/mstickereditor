@@ -213,6 +213,7 @@ mod tests {
 
 	use super::StickerPack;
 	use crate::{database::simple_file::FileDatabase, image::AnimationFormat};
+	use lottieconv::Rgba;
 	use std::env;
 
 	async fn import(pack: &str, animation_format: Option<AnimationFormat>) {
@@ -241,5 +242,32 @@ mod tests {
 	#[ignore]
 	async fn import_simple() {
 		import("LINE_Menhera_chan_ENG", Some(AnimationFormat::Webp)).await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_webp() {
+		import("NSanimated", Some(AnimationFormat::Webp)).await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_gif() {
+		import(
+			"NSanimated",
+			Some(AnimationFormat::Gif(Rgba {
+				r: 0,
+				g: 0,
+				b: 0,
+				a: true
+			}))
+		)
+		.await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_none() {
+		import("NSanimated", None).await;
 	}
 }
