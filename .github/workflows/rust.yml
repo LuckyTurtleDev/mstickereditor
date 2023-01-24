@@ -19,8 +19,6 @@ jobs:
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}}"
       - uses: msrd0/install-rlottie-action@v1
-        env:
-          pkgver: "0.2"
       - run: cargo test --workspace --all-features -- --include-ignored
         env:
           RUST_BACKTRACE: 1
