@@ -62,7 +62,7 @@ impl StickerPack {
 		let mut image = tg_sticker.download(tg_config).await?;
 		// convert sticker from lottie to gif if neccessary
 		if image.path.ends_with(".tgs") {
-			if let Some(format) = animation_format{
+			if let Some(format) = animation_format {
 				image = image.convert_tgs(format.to_owned()).await?;
 			}
 		}

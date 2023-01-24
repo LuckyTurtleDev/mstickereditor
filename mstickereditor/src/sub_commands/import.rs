@@ -34,9 +34,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			.await
 			.expect("Error connecting to Matrix homeserver");
 	}
-	let animation_fromat = if opt.dryrun {
-		None 
-	} else { Some(&config.sticker)};
+	let animation_fromat = if opt.dryrun { None } else { Some(&config.sticker) };
 	let mut packs: Vec<String> = Vec::new();
 	while let Some(pack) = opt.packs.pop() {
 		let mut id = pack.strip_prefix("https://t.me/addstickers/");
