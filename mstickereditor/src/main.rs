@@ -19,7 +19,10 @@ static PROJECT_DIRS: Lazy<ProjectDirs> =
 static DATABASE_FILE: Lazy<PathBuf> = Lazy::new(|| PROJECT_DIRS.data_dir().join("uploads"));
 
 pub fn new_current_thread_runtime() -> Result<tokio::runtime::Runtime, std::io::Error> {
-	tokio::runtime::Builder::new_current_thread().worker_threads(1).build()
+	tokio::runtime::Builder::new_current_thread()
+		.worker_threads(1)
+		.enable_all()
+		.build()
 }
 
 pub fn load_config_file() -> anyhow::Result<Config> {

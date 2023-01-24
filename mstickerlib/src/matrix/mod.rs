@@ -43,7 +43,7 @@ pub async fn set_widget(matrix: &Config, sender: String, url: String) -> anyhow:
 			"{}/_matrix/client/r0/user/{}/account_data/m.widgets",
 			matrix.homeserver_url, matrix.user
 		))
-		.query(&["access_token", &matrix.access_token])
+		.query(&[("access_token", &matrix.access_token)])
 		.header("Content-Type", "application/json")
 		.json(&stickerwidget)
 		.send()

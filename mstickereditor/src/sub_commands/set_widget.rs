@@ -13,6 +13,5 @@ pub fn run(opt: Opt) -> anyhow::Result<()> {
 		.expect("failed to starte tokio runtime")
 		.block_on(set_widget(&config.matrix, config.matrix.user.clone(), opt.widgeturl))
 		.expect("Error enabling widget");
-
 	Ok(())
 }
