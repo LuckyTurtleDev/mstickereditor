@@ -18,6 +18,7 @@ directories = "4.0"
 mstickerlib = { path= "../mstickerlib"}
 once_cell = "1.8"
 rayon = "1.5"
+tokio = { version = "1.21", features = ["macros", "rt-multi-thread", "fs", "rt"], default-features = false }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 sha2 = "0.10"

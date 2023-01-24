@@ -1,4 +1,4 @@
-use crate::config;
+use crate::load_config_file;
 use anyhow::{bail, Context};
 use clap::Parser;
 use serde::{Deserialize, Serialize};
@@ -40,7 +40,7 @@ pub fn run(opt: Opt) -> anyhow::Result<()> {
 	}
 	let homeserver_url = match opt.homeserver {
 		Some(value) => value,
-		None => config::load_config_file()?.matrix.homeserver_url
+		None => load_config_file()?.matrix.homeserver_url
 	};
 	let index = INDEX { packs, homeserver_url };
 	let string = match opt.pretty {

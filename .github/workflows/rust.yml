@@ -11,28 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: dtolnay/rust-toolchain@stable
-      - name: Install rlottie
-        run: |
-          sudo apt-get install -y ninja-build
-          wget -q "https://github.com/Samsung/rlottie/archive/refs/tags/v$pkgver.tar.gz"
-          tar xfz v$pkgver.tar.gz
-          cd rlottie-$pkgver
-          wget -q "https://aur.archlinux.org/cgit/aur.git/plain/0001-add-missing-include.patch?h=rlottie" -o 0001-add-missing-include.patch
-          patch --forward --strip=0 --input=0001-add-missing-include.patch
-          mkdir -p build
-          cd build
-          cmake .. \
-            -G Ninja \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DCMAKE_BUILD_TYPE=Release
-          ninja
-          sudo ninja install
-          cd ../..
-        env:
-          pkgver: "0.2"
-      - run: cargo test --workspace --all-features
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}}"
+      - uses: msrd0/install-rlottie-action@v1
+      - run: cargo test --workspace --all-features --release -- --include-ignored
         env:
           RUST_BACKTRACE: 1
+          TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
 
   rustfmt:
     runs-on: ubuntu-latest
