@@ -14,7 +14,7 @@ jobs:
       - uses: msrd0/install-rlottie-action@v1
         env:
           pkgver: "0.2"
-      - run: cargo test --workspace --all-features --include-ignored
+      - run: cargo test --workspace --all-features -- --include-ignored
         env:
           RUST_BACKTRACE: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
