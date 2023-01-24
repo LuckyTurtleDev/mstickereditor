@@ -207,3 +207,39 @@ impl StickerPack {
 		Ok(stickerpack)
 	}
 }
+
+#[cfg(test)]
+mod tests {
+
+	use super::StickerPack;
+	use crate::{database::simple_file::FileDatabase, image::AnimationFormat};
+	use std::env;
+
+	async fn import(pack: &str, animation_format: Option<AnimationFormat>) {
+		let matrix_config = crate::matrix::Config {
+			homeserver_url: "none".to_owned(),
+			user: "none".to_owned(),
+			access_token: "none".to_owned()
+		};
+		let tg_config = crate::tg::Config {
+			bot_key: env::var("TG_BOT_KEY").expect("environment variables TG_BOT_KEY is not set")
+		};
+		StickerPack::import_pack::<FileDatabase>(
+			pack,
+			None,
+			&tg_config,
+			true,
+			false,
+			&matrix_config,
+			animation_format.as_ref()
+		)
+		.await
+		.unwrap();
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_simple() {
+		import("LINE_Menhera_chan_ENG", Some(AnimationFormat::Webp)).await;
+	}
+}
