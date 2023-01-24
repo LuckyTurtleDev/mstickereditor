@@ -19,7 +19,7 @@ jobs:
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}}"
       - uses: msrd0/install-rlottie-action@v1
-      - run: cargo test --workspace --all-features -- --include-ignored
+      - run: cargo test --workspace --all-features --release -- --include-ignored
         env:
           RUST_BACKTRACE: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
