@@ -39,6 +39,9 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	while let Some(pack) = opt.packs.pop() {
 		let mut id = pack.strip_prefix("https://t.me/addstickers/");
 		if id.is_none() {
+			id = pack.strip_prefix("t.me/addstickers/");
+		};
+		if id.is_none() {
 			id = pack.strip_prefix("tg://addstickers?set=");
 		};
 		match id {
