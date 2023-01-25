@@ -1,8 +1,8 @@
 [![GitHub actions](https://github.com/Lukas1818/mstickereditor/workflows/Rust/badge.svg)](https://github.com/Lukas1818/mstickereditor/actions?query=workflow%3ARust)
 [![crates.io](https://img.shields.io/crates/v/mstickereditor.svg)](https://crates.io/crates/mstickereditor)
 [![License Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
+[![Matrix chat](https://img.shields.io/badge/chat-matrix-informational?logo=matrix)](https://matrix.to/#/#mstickereditor:lukas1818.de)
 [![AUR package](https://repology.org/badge/version-for-repo/aur/mstickereditor.svg)](https://aur.archlinux.org/packages/mstickereditor/)
-[![more-wallpapers on deps.rs](https://deps.rs/repo/github/LuckyTurtleDev/more-wallpapers/status.svg)](https://deps.rs/repo/github/LuckyTurtleDev/more-wallpapers)
 
 # mstickereditor
 Import sticker packs from telegram, to be used at the [Maunium sticker picker](https://github.com/maunium/stickerpicker) for Matrix
@@ -12,14 +12,16 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 * enable Stickerpicker widget for supported Matrix Clients
 
 ## Client Support for Animated Sticker:
-| Client                         | gif         | webp(default)     | custom stickerpicker | 
-|--------------------------------|-------------|-------------------|----------------------|
-| Element Desktop/Web            | ✅          | ✅                | ✅                   |
-| Element Android                | no autoplay | static image only | ✅                   |
-| [Schildi][Schildi] Desktop/Web | ✅          | ✅                | ✅                   |
-| [Schildi][Schildi] Android     | ✅          | static image only | ✅                   |
-| [Nheko][Nheko]                 | ✅          | ✅                | ❌                   |
-| [mautrix-telegram-bridge]      | ✅          | static image only | ✅                   |
+| Client                   | gif         | webp(default)     | stickerpicker typ | 
+|--------------------------|-------------|-------------------|-------------------|
+| [Cinny]                  | ✅          | ✅                | ponies            |
+| [Element] Desktop/Web    | ✅          | ✅                | widget            |
+| [Element] Android        | no autoplay | static image only | widget            |
+| [FluffyChat]             | ✅          | ✅                | ponies            |
+| [Nheko]                  | ✅          | ✅                | ponies            |
+| [Schildi] Desktop/Web    | ✅          | ✅                | widget            |
+| [Schildi] Android        | ✅          | static image only | widget            |
+| [mautrix-telegram-bridge]| ✅          | static image only | -                 |
 
 Other clients were not tested.
 (I am not assioted with Schildi, although they also love turtles)
@@ -27,8 +29,11 @@ Other clients were not tested.
 Gif does not support semitransparent pixel, which probably leads to ugly effects,
 if the background of the client does not match the `transparent_color`.
 
-[Schildi]: https://schildi.chat/
+[Cinny]: https://cinny.in/
+[Element]: https://element.io/download
+[FluffyChat]: https://fluffychat.im/
 [Nheko]: https://github.com/Nheko-Reborn/nheko
+[Schildi]: https://schildi.chat/
 [mautrix-telegram-bridge]: https://github.com/mautrix/telegram
 
 
