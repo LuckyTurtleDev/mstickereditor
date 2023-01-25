@@ -19,7 +19,7 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 | [Schildi][Schildi] Desktop/Web | ✅          | ✅                | ✅                   |
 | [Schildi][Schildi] Android     | ✅          | static image only | ✅                   |
 | [Nheko][Nheko]                 | ✅          | ✅                | ❌                   |
-| [mautrix-telegram-bridge]      | ✅          | static image only | -                    |
+| [mautrix-telegram-bridge]      | ✅          | static image only | ✅                   |
 
 Other clients were not tested.
 (I am not assioted with Schildi, although they also love turtles)
@@ -56,10 +56,9 @@ homeserver_url = "https://matrix-client.matrix.org"
 access_token = "YOUR-MATIRX-ACESSTOKEN"
 
 [sticker]
-transparent_color = { r = 0, g = 0, b = 0, a = true }
-animation_format = "webp"
+transparent_color = { r = 0, g = 0, b = 0, alpha = true }
 ```
-The `[sticker]` section and every field inside are optional and can be left out.
+The `[sticker]` section ist optional and can be left out.
 
 `transparent_color` is used as color for semitransparent pixel in `gif`s.
 The field has no effect, if the sticker is not animated or will be converted to `webp` (default).
