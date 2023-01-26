@@ -62,12 +62,13 @@ access_token = "YOUR-MATIRX-ACESSTOKEN"
 
 [sticker]
 transparent_color = { r = 0, g = 0, b = 0, alpha = true }
+animation_format = "webp"
 ```
 The `[sticker]` section ist optional and can be left out.
 
 `transparent_color` is used as color for semitransparent pixel in `gif`s.
 The field has no effect, if the sticker is not animated or will be converted to `webp` (default).
-`r`,`g`,`b` are 8-bit unsigned integer and must been between 0 and 255 inclusive. 
+`r`,`g`,`b` must been between 0 and 255 inclusive. 
 
 ## Installation:
 Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
