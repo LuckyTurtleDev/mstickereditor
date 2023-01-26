@@ -41,6 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
+      - uses: msrd0/install-rlottie-action@v1
       - uses: msrd0/cargo-publish-action@v1
         with: 
           packages: mstickerlib mstickereditor
