@@ -2,13 +2,12 @@
 
 [package]
 name = "mstickerlib"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2021"
 license = "Apache-2.0"
-description= "import sticker packs from telegram, to be used at the Maunium sticker picker for Matrix"
+description= "Private implementation detail of mstickereditor"
 repository = "https://github.com/LuckyTurtleDev/mstickereditor"
-keywords = ["matrix", "sticker", "stickerpicker", "chat", "messaging"]
-include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
+include = ["/src/**/*.rs", "../LICENSE"]
 
 [dependencies]
 anyhow = "1.0"

@@ -47,7 +47,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		match id {
 			None => {
 				eprintln!("{pack:?} does not look like a Telegram StickerPack");
-				eprintln!("Pack url should start with \"https://t.me/addstickers/\" or \"tg://addstickers?set=\"");
+				eprintln!("Pack url should start with \"https://t.me/addstickers/\", \"t.me/addstickers/\" or \"tg://addstickers?set=\"");
 				exit(1);
 			},
 			Some(id) => packs.push(id.into())
