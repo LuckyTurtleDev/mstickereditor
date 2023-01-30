@@ -70,7 +70,7 @@ The `[sticker]` section is optional and can be left out.
 The field has no effect, if the sticker is not animated or will be converted to `webp` (default).
 `r`,`g`,`b` must been between 0 and 255 inclusive. 
 
-`animation_format`: is used to convert the stickers, you can either choose `webp` (default) or `gif`.
+`animation_format`: is used to convert the animated stickers to, you can either choose `webp` (default) or `gif`.
 
 ## Installation:
 Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
