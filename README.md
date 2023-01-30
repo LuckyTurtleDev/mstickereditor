@@ -12,7 +12,7 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 * enable Stickerpicker widget for supported Matrix Clients
 
 ## Client Support for Animated Sticker:
-| Client                   | gif         | webp(default)     | stickerpicker typ | 
+| Client                   | gif         | webp(default)     | stickerpicker type | 
 |--------------------------|-------------|-------------------|-------------------|
 | [Cinny]                  | ✅          | ✅                | ponies            |
 | [Element] Desktop/Web    | ✅          | ✅                | widget            |
@@ -50,7 +50,7 @@ if the background of the client does not match the `transparent_color`.
 * [ldd](https://clang.llvm.org/) (make)
 
 ### Configuration:
-You need to create the following `config.toml` file and enter your values:
+You need to create the following `config.toml` file (located at *~/.config/mstickereditor/config.toml*) and enter your values:
 ```toml
 [telegram]
 bot_key = "YOUR-TELEGRAM-BOT-KEY"
@@ -64,11 +64,13 @@ access_token = "YOUR-MATIRX-ACESSTOKEN"
 transparent_color = { r = 0, g = 0, b = 0, alpha = true }
 animation_format = "webp"
 ```
-The `[sticker]` section ist optional and can be left out.
+The `[sticker]` section is optional and can be left out.
 
 `transparent_color` is used as color for semitransparent pixel in `gif`s.
 The field has no effect, if the sticker is not animated or will be converted to `webp` (default).
 `r`,`g`,`b` must been between 0 and 255 inclusive. 
+
+`animation_format`: is used to convert the animated stickers to, you can either choose `webp` (default) or `gif`.
 
 ## Installation:
 Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
