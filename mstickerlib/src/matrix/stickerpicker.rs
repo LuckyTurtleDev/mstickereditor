@@ -1,22 +1,22 @@
 use serde::Serialize;
 
 #[derive(Serialize)]
-pub struct StickerWidget {
-	pub content: Content,
-	pub sender: String,
-	pub state_key: String,
+pub(crate) struct StickerWidget {
+	content: Content,
+	sender: String,
+	state_key: String,
 	#[serde(rename = "stype")]
-	pub stype: String,
-	pub id: String
+	stype: String,
+	id: String
 }
 
 #[derive(Serialize)]
-pub struct Content {
+struct Content {
 	#[serde(rename = "stype")]
-	pub stype: String,
-	pub url: String,
-	pub name: String,
-	pub data: String
+	stype: String,
+	url: String,
+	name: String,
+	data: String
 }
 
 impl StickerWidget {

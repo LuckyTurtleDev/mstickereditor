@@ -3,12 +3,12 @@ use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Sticker {
-	pub emoji: String,
-	pub file_id: String,
+	pub(crate) emoji: String,
+	pub(crate) file_id: String,
 	//pub thumb: Option<PhotoSize>	TODO
-	pub width: u32,
-	pub height: u32,
-	pub is_video: bool
+	pub(crate) width: u32,
+	pub(crate) height: u32,
+	pub(crate) is_video: bool
 }
 
 impl Sticker {

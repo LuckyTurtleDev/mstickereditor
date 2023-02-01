@@ -1,3 +1,9 @@
+#![allow(clippy::tabs_in_doc_comments)]
+#![warn(unreachable_pub)]
+#![cfg_attr(all(doc, nightly), feature(doc_auto_cfg))]
+
+//! **WARINING: this crate is unstable und still have many anti-patterns**
+
 pub mod database;
 pub mod image;
 pub mod matrix;

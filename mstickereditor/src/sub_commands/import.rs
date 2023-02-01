@@ -68,7 +68,14 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		.await
 		.with_context(|| format!("failed to import pack {pack}"))?;
 		fs::write(
-			Path::new(&format!("./{}.json", matrix_pack.tg_pack.short_name)),
+			Path::new(&format!(
+				"./{}.json",
+				matrix_pack
+					.tg_pack
+					.as_ref()
+					.map(|f| f.name.clone())
+					.unwrap_or_else(|| matrix_pack.title.to_owned())
+			)),
 			serde_json::to_string(&matrix_pack)?
 		)
 		.await?;

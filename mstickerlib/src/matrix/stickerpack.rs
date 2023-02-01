@@ -1,4 +1,12 @@
-use crate::database;
+use super::{
+	sticker::{Sticker, TgStickerInfo},
+	sticker_formats::ponies::MetaData
+};
+use crate::{
+	database,
+	image::AnimationFormat,
+	tg::{self, sticker::Sticker as TgSticker}
+};
 use anyhow::anyhow;
 use colored::*;
 use futures_util::future::join_all;
@@ -7,26 +15,28 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 use tokio::fs;
 
-use super::sticker::{Metadata, Sticker, StickerInfo, TgInfo, TgPackInfo};
-use crate::tg::{self, sticker::Sticker as TgSticker};
-
-use crate::image::AnimationFormat;
-
 ///additonal informations about the original telegram sticker pack
 ///stored at `net.maunium.telegram.pack`
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TgPack {
-	pub short_name: String,
-	pub hash: String
+pub struct TgPackInfo {
+	pub name: String,
+	pub title: String
+}
+impl From<&crate::tg::stickerpack::Pack> for TgPackInfo {
+	fn from(value: &crate::tg::stickerpack::Pack) -> Self {
+		Self {
+			name: value.name.clone(),
+			title: value.title.clone()
+		}
+	}
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct StickerPack {
 	pub title: String,
+	///unique id
 	pub id: String,
-	#[serde(rename = "net.maunium.telegram.pack")]
-	pub tg_pack: TgPack,
-
+	pub tg_pack: Option<TgPackInfo>,
 	pub stickers: Vec<Sticker>
 }
 
@@ -96,32 +106,24 @@ impl StickerPack {
 			}
 
 			//construct Sticker Struct
-			let tg_info = TgInfo {
-				id: "unimplemented".to_owned(),
+			let tg_info = TgStickerInfo {
+				bot_api_id: Some(tg_sticker.file_id.clone()),
+				client_api_id: None,
 				emoticons: vec![tg_sticker.emoji.to_owned()],
-				pack: TgPackInfo {
-					id: "unimplemented".to_owned(),
-					short_name: tg_stickerpack.name.clone()
-				}
+				pack_info: tg_stickerpack.into()
 			};
-			let meta_data = Metadata {
+			let meta_data = MetaData {
 				w: image.width,
 				h: image.height,
 				size: image.data.len(),
 				mimetype
 			};
-			let info = StickerInfo {
-				metadata: meta_data.clone(),
-				thumbnail_url: mxc_url.clone(),
-				thumbnail_info: meta_data
-			};
+			let sticker_imag = super::sticker::Image { url: mxc_url, meta_data };
 			sticker = Some(Sticker {
 				body: tg_sticker.emoji.clone(),
-				url: mxc_url,
-				info,
-				msgtype: "m.sticker".to_owned(),
-				id: format!("tg_file_id_{}", tg_sticker.file_id),
-				tg_sticker: tg_info
+				image: sticker_imag,
+				thumbnail: None,
+				tg_sticker: Some(tg_info)
 			});
 		}
 
@@ -185,7 +187,7 @@ impl StickerPack {
 			.filter_map(|res: anyhow::Result<Option<Sticker>>| match res {
 				Ok(sticker) => sticker,
 				Err(err) => {
-					pb.println(format!("ERROR: {:?}", err).red().to_string());
+					pb.println(format!("ERROR: {err:?}").red().to_string());
 					pb.println("Stickerpack will not be complete".yellow().to_string());
 					None
 				}
@@ -196,12 +198,9 @@ impl StickerPack {
 		// save the stickerpack to file
 		println!("save stickerpack {} to {}.json", tg_stickerpack.title, tg_stickerpack.name);
 		let stickerpack = StickerPack {
-			title: tg_stickerpack.title,
+			title: tg_stickerpack.title.clone(),
 			id: format!("tg_name_{}", tg_stickerpack.name),
-			tg_pack: TgPack {
-				short_name: tg_stickerpack.name,
-				hash: "unimplemented".to_owned()
-			},
+			tg_pack: Some((&tg_stickerpack).into()),
 			stickers
 		};
 		Ok(stickerpack)
