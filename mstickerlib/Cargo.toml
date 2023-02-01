@@ -2,7 +2,8 @@
 
 [package]
 name = "mstickerlib"
-version = "0.0.1"
+version = "0.0.1" # ALSO UPDATE DOC LINK
+documentation = "https://docs.msrd0.de/mstickerlib/0.0.1/mstickerlib/"
 edition = "2021"
 license = "Apache-2.0"
 description= "Private implementation detail of mstickereditor"
