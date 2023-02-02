@@ -109,7 +109,7 @@ impl StickerPack {
 			let tg_info = TgStickerInfo {
 				bot_api_id: Some(tg_sticker.file_id.clone()),
 				client_api_id: None,
-				emoticons: vec![tg_sticker.emoji.to_owned()],
+				emoji: vec![tg_sticker.emoji.to_owned()],
 				pack_info: tg_stickerpack.into()
 			};
 			let meta_data = MetaData {
@@ -123,6 +123,8 @@ impl StickerPack {
 				body: tg_sticker.emoji.clone(),
 				image: sticker_imag,
 				thumbnail: None,
+				emoji: vec![tg_sticker.emoji.clone()],
+				emoticons: None,
 				tg_sticker: Some(tg_info)
 			});
 		}

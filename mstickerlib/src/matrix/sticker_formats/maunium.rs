@@ -2,6 +2,7 @@
 //! The maunium stickerpicker does fully replace the default stickerpicker.
 
 use super::ponies::MetaData;
+use monostate::MustBe;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,8 +28,7 @@ pub struct Sticker {
 	pub metadata: MetaData,
 	pub thumbnail_url: String,
 	pub thumbnail_info: MetaData,
-	#[serde(default = "default_msgtype")]
-	msgtype: String,
+	msgtype: MustBe!("m.sticker"),
 	pub id: String,
 	#[serde(rename = "net.maunium.telegram.sticker")]
 	pub tg_sticker: Option<TgInfo>
@@ -66,7 +66,7 @@ impl From<crate::matrix::sticker::Sticker> for Sticker {
 				.map(|f| f.url.to_owned())
 				.unwrap_or(value.image.url.clone()),
 			thumbnail_info: value.thumbnail.map(|f| f.meta_data).unwrap_or(value.image.meta_data),
-			msgtype: "m.sticker".to_owned(),
+			msgtype: Default::default(),
 			id: value.image.url,
 			tg_sticker: None
 		}

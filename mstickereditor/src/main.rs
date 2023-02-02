@@ -78,7 +78,7 @@ fn main() {
 		Opt::CreateIndex(opt) => create_index::run(opt)
 	};
 	if let Err(error) = result {
-		eprintln!("{:?}", error);
+		eprintln!("{error:?}");
 		exit(1);
 	}
 }
