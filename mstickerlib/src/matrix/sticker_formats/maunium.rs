@@ -25,10 +25,11 @@ pub struct TgPackRootInfo {
 pub struct Sticker {
 	pub body: String,
 	pub url: String,
-	pub metadata: MetaData,
+	pub info: MetaData,
 	pub thumbnail_url: String,
 	pub thumbnail_info: MetaData,
-	msgtype: MustBe!("m.sticker"),
+	/// must be always "m.sticker", use `Default::default` to initialize it.
+	pub msgtype: MustBe!("m.sticker"),
 	pub id: String,
 	#[serde(rename = "net.maunium.telegram.sticker")]
 	pub tg_sticker: Option<TgStickerInfo>
@@ -56,7 +57,7 @@ impl From<crate::matrix::sticker::Sticker> for Sticker {
 		Self {
 			body: value.body,
 			url: value.image.url.clone(),
-			metadata: value.image.meta_data.clone(),
+			info: value.image.meta_data.clone(),
 			thumbnail_url: value
 				.thumbnail
 				.as_ref()

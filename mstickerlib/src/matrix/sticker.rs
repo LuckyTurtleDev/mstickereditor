@@ -48,7 +48,7 @@ impl From<maunium::Sticker> for Sticker {
 	fn from(value: maunium::Sticker) -> Self {
 		let image = Image {
 			url: value.url,
-			meta_data: value.metadata
+			meta_data: value.info
 		};
 		let thumbnail = Image {
 			url: value.thumbnail_url,
