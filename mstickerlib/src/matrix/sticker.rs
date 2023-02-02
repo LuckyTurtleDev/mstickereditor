@@ -48,11 +48,11 @@ impl From<maunium::Sticker> for Sticker {
 	fn from(value: maunium::Sticker) -> Self {
 		let image = Image {
 			url: value.url,
-			meta_data: value.info
+			meta_data: value.info.image_info
 		};
 		let thumbnail = Image {
-			url: value.thumbnail_url,
-			meta_data: value.thumbnail_info
+			url: value.info.thumbnail_url,
+			meta_data: value.info.thumbnail_info
 		};
 		let thumbnail = if image == thumbnail { None } else { Some(thumbnail) };
 		let tg_sticker: Option<TgStickerInfo> = value.tg_sticker.map(|f| f.into());

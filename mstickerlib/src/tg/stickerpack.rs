@@ -17,9 +17,14 @@ impl Pack {
 	pub async fn get(name: &str, tg_config: &Config) -> anyhow::Result<Pack> {
 		tg_get(tg_config, "getStickerSet", [("name", name)]).await
 	}
-	
+
 	///unimplementetd
-	pub async fn import_to_matrix(self, tg_config: &Config, animation_format: Option<AnimationFormat>, matrix_config: crate::matrix::Config) -> anyhow::Result<crate::matrix::stickerpack::StickerPack> {
+	pub async fn import_to_matrix(
+		self,
+		tg_config: &Config,
+		animation_format: Option<AnimationFormat>,
+		matrix_config: crate::matrix::Config
+	) -> anyhow::Result<crate::matrix::stickerpack::StickerPack> {
 		unimplemented!()
 	}
 }
