@@ -140,7 +140,7 @@ impl StickerPack {
 				image: sticker_imag,
 				thumbnail: None,
 				emoji: tg_sticker.emoji.clone().into_iter().collect(),
-				emoticons: None,
+				emoticon: None,
 				tg_sticker: Some(tg_info)
 			});
 		}

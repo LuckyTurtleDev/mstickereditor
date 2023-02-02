@@ -10,7 +10,7 @@ pub struct Sticker {
 	pub image: Image,
 	pub thumbnail: Option<Image>,
 	///abbreviation for the sticker, to be used inline
-	pub emoticons: Option<String>,
+	pub emoticon: Option<String>,
 	///unicode emoji with are assioted with the sticker
 	pub emoji: Vec<String>,
 	pub tg_sticker: Option<TgStickerInfo>
@@ -60,7 +60,7 @@ impl From<maunium::Sticker> for Sticker {
 			body: value.body,
 			image,
 			thumbnail,
-			emoticons: None,
+			emoticon: None,
 			emoji: tg_sticker.as_ref().map(|f| f.emoji.to_owned()).unwrap_or_default(),
 			tg_sticker
 		}

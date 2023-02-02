@@ -7,6 +7,8 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+use crate::matrix;
+
 #[derive(Serialize, Deserialize)]
 pub struct PackInfo {
 	display_name: String,
@@ -42,6 +44,7 @@ pub struct Sticker {
 	usage: HashSet<Usage>
 }
 
+/// **Warning:** `usage` will always been set to `Sticker` since, `Emoticon` is only usefull as tupple with String
 impl From<crate::matrix::sticker::Sticker> for Sticker {
 	fn from(value: crate::matrix::sticker::Sticker) -> Self {
 		Self {
@@ -60,7 +63,15 @@ impl From<crate::matrix::stickerpack::StickerPack> for StickerPack {
 				.stickers
 				.into_iter()
 				.enumerate()
-				.map(|(i, sticker)| (i.to_string(), sticker.into()))
+				.map(|(i, sticker)| {
+					if let Some(emoticon) = sticker.emoticon.clone() {
+						let mut sticker: Sticker = sticker.into();
+						sticker.usage.insert(Usage::Emoticon);
+						(emoticon, sticker)
+					} else {
+						(format!("{i:04}"), sticker.into())
+					}
+				})
 				.collect(),
 			pack: PackInfo {
 				display_name: value.title,
