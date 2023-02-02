@@ -10,13 +10,13 @@ pub struct StickerPack {
 	pub title: String,
 	pub id: String,
 	#[serde(rename = "net.maunium.telegram.pack")]
-	pub tg_pack: Option<TgPack>,
+	pub tg_pack: Option<TgPackRootInfo>,
 	pub stickers: Vec<Sticker>
 }
 
 ///information about the telegram pack, which was imported
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TgPack {
+pub struct TgPackRootInfo {
 	pub short_name: String,
 	pub hash: String
 }
@@ -31,16 +31,13 @@ pub struct Sticker {
 	msgtype: MustBe!("m.sticker"),
 	pub id: String,
 	#[serde(rename = "net.maunium.telegram.sticker")]
-	pub tg_sticker: Option<TgInfo>
-}
-fn default_msgtype() -> String {
-	"m.sticker".to_owned()
+	pub tg_sticker: Option<TgStickerInfo>
 }
 
 ///additonal informations about the original telegram sticker
 ///stored at stickers->net.maunium.telegram.sticker
 #[derive(Debug, Serialize, Deserialize)]
-pub struct TgInfo {
+pub struct TgStickerInfo {
 	pub pack: TgPackInfo,
 	pub id: String,
 	pub emoticons: Vec<String>

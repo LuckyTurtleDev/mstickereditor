@@ -1,6 +1,6 @@
 use super::{
 	sticker::{Sticker, TgStickerInfo},
-	sticker_formats::ponies::MetaData
+	sticker_formats::{maunium, ponies::MetaData}
 };
 use crate::{
 	database,
@@ -206,6 +206,34 @@ impl StickerPack {
 			stickers
 		};
 		Ok(stickerpack)
+	}
+}
+
+impl From<maunium::TgPackInfo> for TgPackInfo {
+	fn from(value: maunium::TgPackInfo) -> Self {
+		Self {
+			name: value.short_name.clone(),
+			title: value.short_name
+		}
+	}
+}
+impl From<maunium::TgPackRootInfo> for TgPackInfo {
+	fn from(value: maunium::TgPackRootInfo) -> Self {
+		Self {
+			name: value.short_name.clone(),
+			title: value.short_name
+		}
+	}
+}
+
+impl From<maunium::StickerPack> for StickerPack {
+	fn from(value: maunium::StickerPack) -> Self {
+		Self {
+			title: value.title,
+			id: value.id,
+			tg_pack: value.tg_pack.map(|f| f.into()),
+			stickers: value.stickers.into_iter().map(|f| f.into()).collect()
+		}
 	}
 }
 

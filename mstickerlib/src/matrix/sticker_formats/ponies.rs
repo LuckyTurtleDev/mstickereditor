@@ -26,7 +26,7 @@ pub enum Usage {
 	Emoticon
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct MetaData {
 	pub w: u32,
 	pub h: u32,
@@ -69,3 +69,5 @@ impl From<crate::matrix::stickerpack::StickerPack> for StickerPack {
 		}
 	}
 }
+
+impl_from!(Sticker, StickerPack);
