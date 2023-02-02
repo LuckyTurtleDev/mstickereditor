@@ -5,7 +5,8 @@ use serde::Deserialize;
 
 mod stickerpicker;
 use stickerpicker::StickerWidget;
-mod sticker;
+pub mod sticker;
+pub mod sticker_formats;
 pub mod stickerpack;
 
 #[derive(Deserialize)]

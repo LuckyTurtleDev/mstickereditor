@@ -1,78 +1,68 @@
+use super::{
+	sticker_formats::{ponies::MetaData, *},
+	stickerpack::TgPackInfo
+};
 use serde::{Deserialize, Serialize};
-
-use crate::image::AnimationFormat;
-
-#[derive(Debug, Deserialize)]
-pub struct Color {
-	pub r: u8,
-	pub g: u8,
-	pub b: u8,
-	pub alpha: bool
-}
-
-impl Default for Color {
-	fn default() -> Self {
-		Color {
-			r: 0,
-			g: 0,
-			b: 0,
-			alpha: true
-		}
-	}
-}
-
-#[derive(Debug, Default, Deserialize)]
-pub struct Config {
-	#[serde(default)]
-	pub transparent_color: Color,
-	#[serde(default)]
-	pub animation_format: AnimationFormat
-}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sticker {
 	pub body: String,
+	pub image: Image,
+	pub thumbnail: Option<Image>,
+	///abbreviation for the sticker, to be used inline
+	pub emoticons: Option<String>,
+	///unicode emoji with are assioted with the sticker
+	pub emoji: Vec<String>,
+	pub tg_sticker: Option<TgStickerInfo>
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct Image {
 	pub url: String,
-	pub info: StickerInfo,
-	#[serde(default = "default_msgtype")]
-	pub msgtype: String,
-	pub id: String,
-	#[serde(rename = "net.maunium.telegram.sticker")]
-	pub tg_sticker: TgInfo
+	pub meta_data: MetaData
 }
 
-fn default_msgtype() -> String {
-	"m.sticker".to_owned()
-}
+///info about the original telegram sticker
+///this field should not be change manual
 #[derive(Debug, Serialize, Deserialize)]
-pub struct StickerInfo {
-	#[serde(flatten)]
-	pub metadata: Metadata,
-	pub thumbnail_url: String,
-	pub thumbnail_info: Metadata
+pub struct TgStickerInfo {
+	///pack where the sticker is from
+	pub pack_info: TgPackInfo,
+	pub bot_api_id: Option<String>,
+	pub client_api_id: Option<String>,
+	pub emoji: Vec<String>
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Metadata {
-	pub w: u32,
-	pub h: u32,
-	pub size: usize,
-	pub mimetype: String
+impl From<maunium::TgStickerInfo> for TgStickerInfo {
+	fn from(value: maunium::TgStickerInfo) -> Self {
+		Self {
+			pack_info: value.pack.into(),
+			bot_api_id: None,
+			client_api_id: Some(value.id),
+			emoji: value.emoticons
+		}
+	}
 }
 
-///additonal informations about the original telegram sticker
-///stored at stickers->net.maunium.telegram.sticker
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TgInfo {
-	pub pack: TgPackInfo,
-	pub id: String,
-	pub emoticons: Vec<String>
-}
-
-///additonal informations about the original telegram stickerpack in witch the sticker was inculded
-///stored at stickers->net.maunium.telegram.sticker->pack
-#[derive(Debug, Serialize, Deserialize)]
-pub struct TgPackInfo {
-	pub id: String,
-	pub short_name: String
+impl From<maunium::Sticker> for Sticker {
+	fn from(value: maunium::Sticker) -> Self {
+		let image = Image {
+			url: value.url,
+			meta_data: value.metadata
+		};
+		let thumbnail = Image {
+			url: value.thumbnail_url,
+			meta_data: value.thumbnail_info
+		};
+		let thumbnail = if image == thumbnail { None } else { Some(thumbnail) };
+		let tg_sticker: Option<TgStickerInfo> = value.tg_sticker.map(|f| f.into());
+		Self {
+			body: value.body,
+			image,
+			thumbnail,
+			emoticons: None,
+			emoji: tg_sticker.as_ref().map(|f| f.emoji.to_owned()).unwrap_or_default(),
+			tg_sticker
+		}
+	}
 }

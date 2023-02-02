@@ -35,14 +35,14 @@ impl<'de> Deserialize<'de> for AnimationFormat {
 
 		#[derive(Clone, Copy, Debug, Default, Deserialize)]
 		#[serde(rename_all = "lowercase")]
-		pub enum AFE {
+		enum AFE {
 			#[default]
 			Gif,
 			Webp
 		}
 
 		#[derive(Clone, Debug, Default, Deserialize)]
-		pub struct AFS {
+		struct AFS {
 			#[serde(default)]
 			animation_format: AFE,
 			#[serde(default = "default_color")]

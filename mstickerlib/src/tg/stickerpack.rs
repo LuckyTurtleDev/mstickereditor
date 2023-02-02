@@ -4,8 +4,8 @@ use super::sticker::Sticker;
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Pack {
-	pub name: String,
-	pub title: String,
-	pub is_video: bool,
-	pub stickers: Vec<Sticker>
+	pub(crate) name: String,
+	pub(crate) title: String,
+	pub(crate) is_video: bool,
+	pub(crate) stickers: Vec<Sticker>
 }

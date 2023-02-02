@@ -1,8 +1,12 @@
 use crate::{load_config_file, DATABASE_FILE};
 use anyhow::Context;
 use clap::Parser;
-use mstickerlib::{database::simple_file::FileDatabase, matrix, matrix::stickerpack::StickerPack};
-use std::{path::Path, process::exit};
+use mstickerlib::{
+	database::simple_file::FileDatabase,
+	matrix,
+	matrix::{sticker_formats::maunium, stickerpack::StickerPack}
+};
+use std::{path::PathBuf, process::exit};
 use tokio::fs;
 
 #[derive(Debug, Parser)]
@@ -67,11 +71,17 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		)
 		.await
 		.with_context(|| format!("failed to import pack {pack}"))?;
-		fs::write(
-			Path::new(&format!("./{}.json", matrix_pack.tg_pack.short_name)),
-			serde_json::to_string(&matrix_pack)?
+		let path: PathBuf = format!(
+			"./{}.json",
+			matrix_pack
+				.tg_pack
+				.as_ref()
+				.map(|f| f.name.clone())
+				.unwrap_or_else(|| matrix_pack.title.to_owned())
 		)
-		.await?;
+		.into();
+		let matrix_pack: maunium::StickerPack = matrix_pack.into();
+		fs::write(path, serde_json::to_string(&matrix_pack)?).await?;
 	}
 	Ok(())
 }
