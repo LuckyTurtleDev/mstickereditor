@@ -284,12 +284,14 @@ mod tests {
 	async fn import_gif() {
 		import(
 			"NSanimated",
-			Some(AnimationFormat::Gif(Rgba {
-				r: 0,
-				g: 0,
-				b: 0,
-				a: true
-			}))
+			Some(AnimationFormat::Gif {
+				transparent_color: Rgba {
+					r: 0,
+					g: 0,
+					b: 0,
+					a: true
+				}
+			})
 		)
 		.await;
 	}

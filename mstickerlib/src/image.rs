@@ -4,7 +4,7 @@ use flate2::write::GzDecoder;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
 use rayon;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 use std::{io::Write, path::Path};
 use strum_macros::Display;
 use tempfile::NamedTempFile;
@@ -12,50 +12,15 @@ use tokio;
 
 use crate::{database, matrix, matrix::Config};
 
-#[derive(Clone, Debug, Default, Display)]
+#[derive(Clone, Debug, Default, Deserialize, Display)]
+#[serde(tag = "animation_format", rename_all = "lowercase")]
 pub enum AnimationFormat {
-	Gif(Rgba),
+	Gif {
+		transparent_color: Rgba
+	},
+
 	#[default]
 	Webp
-}
-
-impl<'de> Deserialize<'de> for AnimationFormat {
-	fn deserialize<D>(deserializer: D) -> Result<AnimationFormat, D::Error>
-	where
-		D: Deserializer<'de>
-	{
-		fn default_color() -> Rgba {
-			Rgba {
-				r: 0,
-				g: 0,
-				b: 0,
-				a: true
-			}
-		}
-
-		#[derive(Clone, Copy, Debug, Default, Deserialize)]
-		#[serde(rename_all = "lowercase")]
-		enum AFE {
-			#[default]
-			Gif,
-			Webp
-		}
-
-		#[derive(Clone, Debug, Default, Deserialize)]
-		struct AFS {
-			#[serde(default)]
-			animation_format: AFE,
-			#[serde(default = "default_color")]
-			color: Rgba
-		}
-
-		let afs = AFS::deserialize(deserializer)?;
-		let af = match afs.animation_format {
-			AFE::Webp => AnimationFormat::Webp,
-			AFE::Gif => AnimationFormat::Gif(afs.color)
-		};
-		Ok(af)
-	}
 }
 
 /// cotain a image and its meta data
@@ -107,8 +72,8 @@ impl Image {
 				self.path.truncate(self.path.len() - 3);
 				let converter = Converter::new(animation);
 				match animation_format {
-					AnimationFormat::Gif(background_color) => {
-						converter.gif(background_color, &mut self.data)?.convert()?;
+					AnimationFormat::Gif { transparent_color } => {
+						converter.gif(transparent_color, &mut self.data)?.convert()?;
 						self.path += "gif";
 					},
 					AnimationFormat::Webp => {
