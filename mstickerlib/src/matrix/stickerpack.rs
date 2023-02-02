@@ -22,8 +22,8 @@ pub struct TgPackInfo {
 	pub name: String,
 	pub title: String
 }
-impl From<&crate::tg::Pack> for TgPackInfo {
-	fn from(value: &crate::tg::Pack) -> Self {
+impl From<&crate::tg::StickerPack> for TgPackInfo {
+	fn from(value: &crate::tg::StickerPack) -> Self {
 		Self {
 			name: value.name.clone(),
 			title: value.title.clone()
@@ -50,7 +50,7 @@ impl StickerPack {
 		tg_config: &tg::Config,
 		animation_format: Option<&AnimationFormat>,
 		save_to_disk: bool,
-		tg_stickerpack: &tg::Pack,
+		tg_stickerpack: &tg::StickerPack,
 		dryrun: bool,
 		matrix_config: &super::Config,
 		database: Option<&D>

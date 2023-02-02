@@ -7,7 +7,7 @@ mod sticker;
 pub use sticker::Sticker;
 
 mod stickerpack;
-pub use stickerpack::Pack;
+pub use stickerpack::StickerPack;
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -62,6 +62,6 @@ where
 	Ok(result)
 }
 
-pub(crate) async fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
+pub(crate) async fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<StickerPack> {
 	tg_get(tg_config, "getStickerSet", [("name", name)]).await
 }
