@@ -3,10 +3,11 @@ use anyhow::bail;
 use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub(crate) mod sticker;
+mod sticker;
+pub use sticker::Sticker;
 
-pub(crate) mod stickerpack;
-use stickerpack::Pack;
+mod stickerpack;
+pub use stickerpack::Pack;
 
 #[derive(Deserialize)]
 pub struct Config {

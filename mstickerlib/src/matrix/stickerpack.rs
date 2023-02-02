@@ -5,7 +5,7 @@ use super::{
 use crate::{
 	database,
 	image::AnimationFormat,
-	tg::{self, sticker::Sticker as TgSticker}
+	tg::{self, Sticker as TgSticker}
 };
 use anyhow::anyhow;
 use colored::*;
@@ -22,8 +22,8 @@ pub struct TgPackInfo {
 	pub name: String,
 	pub title: String
 }
-impl From<&crate::tg::stickerpack::Pack> for TgPackInfo {
-	fn from(value: &crate::tg::stickerpack::Pack) -> Self {
+impl From<&crate::tg::Pack> for TgPackInfo {
+	fn from(value: &crate::tg::Pack) -> Self {
 		Self {
 			name: value.name.clone(),
 			title: value.title.clone()
@@ -50,7 +50,7 @@ impl StickerPack {
 		tg_config: &tg::Config,
 		animation_format: Option<&AnimationFormat>,
 		save_to_disk: bool,
-		tg_stickerpack: &tg::stickerpack::Pack,
+		tg_stickerpack: &tg::Pack,
 		dryrun: bool,
 		matrix_config: &super::Config,
 		database: Option<&D>
@@ -60,18 +60,26 @@ impl StickerPack {
 	{
 		if tg_sticker.is_video {
 			pb.println(
-				format!("    skip Sticker {:02} {},	is a video", i + 1, tg_sticker.emoji)
-					.yellow()
-					.to_string()
+				format!(
+					"    skip Sticker {:02} {},	is a video",
+					i + 1,
+					tg_sticker.emoji.as_deref().unwrap_or_default()
+				)
+				.yellow()
+				.to_string()
 			);
 			return Ok(None);
 		}
-		pb.println(format!("download sticker {:02} {}", i + 1, tg_sticker.emoji));
+		pb.println(format!(
+			"download sticker {:02} {}",
+			i + 1,
+			tg_sticker.emoji.as_deref().unwrap_or_default()
+		));
 
 		// download sticker from telegram
-		let mut image = tg_sticker.download(tg_config).await?;
+		let mut image = tg_sticker.download_image(tg_config).await?;
 		// convert sticker from lottie to gif if neccessary
-		if image.path.ends_with(".tgs") {
+		if image.file_name.ends_with(".tgs") {
 			if let Some(format) = animation_format {
 				image = image.convert_tgs(format.to_owned()).await?;
 			}
@@ -79,8 +87,12 @@ impl StickerPack {
 
 		// store file on disk if desired
 		if save_to_disk {
-			pb.println(format!("    save sticker {:02} {}", i + 1, tg_sticker.emoji));
-			let file_path: &Path = image.path.as_ref();
+			pb.println(format!(
+				"    save sticker {:02} {}",
+				i + 1,
+				tg_sticker.emoji.as_deref().unwrap_or_default()
+			));
+			let file_path: &Path = image.file_name.as_ref();
 			fs::write(
 				Path::new(&format!("./stickers/{}", tg_stickerpack.name)).join(file_path.file_name().unwrap()),
 				&image.data
@@ -92,14 +104,18 @@ impl StickerPack {
 		if !dryrun {
 			let mimetype = format!(
 				"image/{}",
-				Path::new(&image.path)
+				Path::new(&image.file_name)
 					.extension()
-					.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", image.path))?
+					.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", image.file_name))?
 					.to_str()
 					.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
 			);
 
-			pb.println(format!("  upload sticker {:02} {}", i + 1, tg_sticker.emoji));
+			pb.println(format!(
+				"  upload sticker {:02} {}",
+				i + 1,
+				tg_sticker.emoji.as_deref().unwrap_or_default()
+			));
 			let (mxc_url, has_uploded) = image.upload(matrix_config, database).await?;
 			if !has_uploded {
 				pb.println("upload skipped; file with this hash was already uploaded")
@@ -109,7 +125,7 @@ impl StickerPack {
 			let tg_info = TgStickerInfo {
 				bot_api_id: Some(tg_sticker.file_id.clone()),
 				client_api_id: None,
-				emoji: vec![tg_sticker.emoji.to_owned()],
+				emoji: tg_sticker.emoji.clone().into_iter().collect(),
 				pack_info: tg_stickerpack.into()
 			};
 			let meta_data = MetaData {
@@ -120,16 +136,20 @@ impl StickerPack {
 			};
 			let sticker_imag = super::sticker::Image { url: mxc_url, meta_data };
 			sticker = Some(Sticker {
-				body: tg_sticker.emoji.clone(),
+				body: tg_sticker.emoji.clone().unwrap_or_default(),
 				image: sticker_imag,
 				thumbnail: None,
-				emoji: vec![tg_sticker.emoji.clone()],
+				emoji: tg_sticker.emoji.clone().into_iter().collect(),
 				emoticons: None,
 				tg_sticker: Some(tg_info)
 			});
 		}
 
-		pb.println(format!("  finish sticker {:02} {}", i + 1, tg_sticker.emoji));
+		pb.println(format!(
+			"  finish sticker {:02} {}",
+			i + 1,
+			tg_sticker.emoji.as_deref().unwrap_or_default()
+		));
 		pb.inc(1);
 		Ok(sticker)
 	}
