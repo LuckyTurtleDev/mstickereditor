@@ -15,7 +15,14 @@ pub struct StickerPack {
 
 impl StickerPack {
 	pub async fn get(name: &str, tg_config: &Config) -> anyhow::Result<Self> {
-		tg_get(tg_config, "getStickerSet", [("name", name)]).await
+		let mut pack: Result<Self, anyhow::Error> = tg_get(tg_config, "getStickerSet", [("name", name)]).await;
+		if let Ok(ref mut pack) = pack {
+			for (i, sticker) in pack.stickers.iter_mut().enumerate() {
+				sticker.pack_name = pack.name.clone();
+				sticker.positon = i;
+			}
+		}
+		pack
 	}
 
 	///unimplementetd
@@ -25,6 +32,7 @@ impl StickerPack {
 		animation_format: Option<AnimationFormat>,
 		matrix_config: crate::matrix::Config
 	) -> anyhow::Result<crate::matrix::stickerpack::StickerPack> {
+		let test = self.stickers.iter().enumerate();
 		unimplemented!()
 	}
 }

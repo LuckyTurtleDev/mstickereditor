@@ -1,5 +1,5 @@
+use crate::{database, matrix, matrix::Config};
 use anyhow::anyhow;
-
 use flate2::write::GzDecoder;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
@@ -9,8 +9,6 @@ use std::{io::Write, path::Path};
 use strum_macros::Display;
 use tempfile::NamedTempFile;
 use tokio;
-
-use crate::{database, matrix, matrix::Config};
 
 #[derive(Clone, Debug, Default, Deserialize, Display)]
 #[serde(tag = "animation_format", rename_all = "lowercase")]
@@ -43,8 +41,11 @@ impl Image {
 		))
 	}
 
-	/// convert `tgs` image to webp or gif
+	/// convert `tgs` image to webp or gif, ignore other formats
 	pub async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+		if !self.file_name.ends_with(".tgs") {
+			return Ok(self);
+		}
 		fn rayon_run<F, T>(callback: F) -> T
 		where
 			F: FnOnce() -> T + Send,

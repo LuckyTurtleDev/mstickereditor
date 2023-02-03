@@ -27,7 +27,7 @@ pub struct Image {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TgStickerInfo {
 	///pack where the sticker is from
-	pub pack_info: TgPackInfo,
+	pub pack_name: String,
 	pub bot_api_id: Option<String>,
 	pub client_api_id: Option<String>,
 	pub emoji: Vec<String>
@@ -36,7 +36,7 @@ pub struct TgStickerInfo {
 impl From<maunium::TgStickerInfo> for TgStickerInfo {
 	fn from(value: maunium::TgStickerInfo) -> Self {
 		Self {
-			pack_info: value.pack.into(),
+			pack_name: value.pack.short_name,
 			bot_api_id: None,
 			client_api_id: Some(value.id),
 			emoji: value.emoticons

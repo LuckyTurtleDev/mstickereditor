@@ -126,7 +126,7 @@ impl StickerPack {
 				bot_api_id: Some(tg_sticker.file_id.clone()),
 				client_api_id: None,
 				emoji: tg_sticker.emoji.clone().into_iter().collect(),
-				pack_info: tg_stickerpack.into()
+				pack_name: tg_stickerpack.name.clone()
 			};
 			let meta_data = MetaData {
 				w: image.width,
