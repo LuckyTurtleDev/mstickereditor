@@ -155,6 +155,7 @@ impl StickerPack {
 	}
 
 	/// import a telegram sticker pack
+	#[deprecated()]
 	pub async fn import_pack<D>(
 		pack: &str,
 		database: Option<&D>,

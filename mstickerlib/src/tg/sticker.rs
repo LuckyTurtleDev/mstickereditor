@@ -59,7 +59,6 @@ impl Sticker {
 	}
 
 	///import sticker to matrix
-	///unimplementated
 	pub async fn import<D>(
 		&self,
 		animation_format: Option<AnimationFormat>,

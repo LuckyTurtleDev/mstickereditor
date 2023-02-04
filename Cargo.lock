@@ -859,6 +859,7 @@ dependencies = [
  "generic-array",
  "indexmap",
  "indicatif",
+ "log",
  "lottieconv",
  "monostate",
  "once_cell",

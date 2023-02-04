@@ -1,8 +1,10 @@
+use super::{sticker::Sticker, tg_get, Config};
+use crate::{database, database::Database, image::AnimationFormat, matrix, tg::sticker};
+use futures_util::future::join_all;
 use serde::Deserialize;
 
-use crate::image::AnimationFormat;
-
-use super::{sticker::Sticker, tg_get, Config};
+#[cfg(feature = "log")]
+use log::{info, warn};
 
 #[derive(Debug, Deserialize)]
 pub struct StickerPack {
@@ -25,14 +27,52 @@ impl StickerPack {
 		pack
 	}
 
-	///unimplementetd
-	pub async fn import_to_matrix(
+	///Import pack to matrix.
+	///Function can partially fail, where some sticker can not be imported.
+	///Because of this the postion of failed stickers and the error, which has occurred will is also returned.
+	///It should be checked if the stickerpack is empty.
+	pub async fn import<D>(
 		self,
-		tg_config: &Config,
 		animation_format: Option<AnimationFormat>,
-		matrix_config: crate::matrix::Config
-	) -> anyhow::Result<crate::matrix::stickerpack::StickerPack> {
-		let test = self.stickers.iter().enumerate();
-		unimplemented!()
+		database: Option<&D>,
+		tg_config: &Config,
+		matrix_config: &matrix::Config
+	) -> (matrix::stickerpack::StickerPack, Vec<(usize, anyhow::Error)>)
+	where
+		D: Database
+	{
+		#[cfg(feature = "log")]
+		info!("import Telegram stickerpack {}({})", self.title, self.name);
+		#[cfg(feature = "log")]
+		if self.is_video {
+			warn!(
+				"sticker pack {} include video stickers. Import of video sticker is not supported and will be skip.",
+				self.name
+			);
+		}
+		let stickers_import_features = self
+			.stickers
+			.iter()
+			.map(|f| f.import(animation_format.clone(), database, tg_config, matrix_config));
+		let stickers = join_all(stickers_import_features).await;
+		let mut ok_stickers = Vec::new();
+		let mut err_stickers = Vec::new();
+		for (i, sticker) in stickers.into_iter().enumerate() {
+			match sticker {
+				Ok(value) => ok_stickers.push(value),
+				Err(err) => err_stickers.push((i, err))
+			}
+		}
+		let stickerpack = matrix::stickerpack::StickerPack {
+			title: self.title.clone(),
+			id: format!("tg_name_{}", self.name),
+			tg_pack: Some((&self).into()),
+			stickers: ok_stickers
+		};
+		#[cfg(feature = "log")]
+		if stickerpack.stickers.is_empty() {
+			warn!("imported pack {} is empty", self.name);
+		}
+		(stickerpack, err_stickers)
 	}
 }
