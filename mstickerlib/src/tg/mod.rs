@@ -7,7 +7,7 @@ mod sticker;
 pub use sticker::Sticker;
 
 mod stickerpack;
-pub use stickerpack::StickerPack;
+pub use stickerpack::{pack_url_to_name, StickerPack};
 
 #[derive(Deserialize)]
 pub struct Config {
