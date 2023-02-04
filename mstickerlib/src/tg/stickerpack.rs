@@ -1,12 +1,12 @@
 use super::{sticker::Sticker, tg_get, Config};
-use crate::{database, database::Database, image::AnimationFormat, matrix, tg::sticker};
+use crate::{database::Database, image::AnimationFormat, matrix};
 use futures_util::future::join_all;
 use serde::Deserialize;
 
 #[cfg(feature = "log")]
 use log::{info, warn};
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash)]
 pub struct StickerPack {
 	pub name: String,
 	pub title: String,

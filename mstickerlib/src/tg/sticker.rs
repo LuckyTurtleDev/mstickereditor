@@ -11,7 +11,7 @@ use std::path::Path;
 #[cfg(feature = "log")]
 use log::info;
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Hash)]
 pub struct Sticker {
 	///Emoji associated with the sticker
 	pub emoji: Option<String>,
