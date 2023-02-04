@@ -58,6 +58,6 @@ pub async fn set_client(client: reqwest::Client) {
 	*lib_client = Some(client);
 }
 
-pub async fn get_client() -> impl futures_util::Future<Output = &'static reqwest::Client> {
-	CLIENT.get()
+pub async fn get_client() -> &'static reqwest::Client {
+	CLIENT.get().await
 }
