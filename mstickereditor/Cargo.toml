@@ -28,6 +28,8 @@ strum_macros = "0.24"
 tempfile = "3.2"
 toml = "0.5.8"
 url = "2.2"
+log = "0.4.17"
+indicatif = "0.17.3"
 
 [features]
 default = ["bin"]

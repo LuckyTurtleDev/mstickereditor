@@ -1,4 +1,4 @@
-use crate::{load_config_file, DATABASE_FILE};
+use crate::{load_config_file, logger::BAR_LOGGER, DATABASE_FILE};
 use anyhow::Context;
 use clap::Parser;
 use mstickerlib::{
@@ -32,6 +32,8 @@ pub struct Opt {
 
 #[tokio::main]
 pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
+	BAR_LOGGER.init().unwrap();
+	BAR_LOGGER.println("Hiiiiiiiiii");
 	let config = load_config_file()?;
 
 	if !opt.dryrun {

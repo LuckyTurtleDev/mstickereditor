@@ -12,6 +12,8 @@ use std::{fs, path::PathBuf, process::exit};
 mod sub_commands;
 use sub_commands::*;
 
+mod logger;
+
 const CONFIG_FILE: &str = "config.toml";
 const CARGO_PKG_NAME: &str = env!("CARGO_PKG_NAME");
 static PROJECT_DIRS: Lazy<ProjectDirs> =
