@@ -6,7 +6,7 @@ use crate::{
 };
 use anyhow::{anyhow, bail};
 use serde::Deserialize;
-use std::path::Path;
+use std::{future::Future, path::Path};
 
 #[cfg(feature = "log")]
 use log::info;
@@ -57,7 +57,6 @@ impl Sticker {
 			height: self.height
 		})
 	}
-
 	///import sticker to matrix
 	pub async fn import<D>(
 		&self,
@@ -69,7 +68,31 @@ impl Sticker {
 	where
 		D: crate::database::Database
 	{
+		self.import_with_custom_upload(
+			animation_format,
+			|image| async {
+				let (mxc_url, has_uploded) = image.upload(matrix_config, database).await?;
+				anyhow::Ok(mxc_url)
+			},
+			tg_config
+		)
+		.await
+	}
+
+	///import sticker to matrix, but allow to use a custom function for uploading to matrix.
+	pub async fn import_with_custom_upload<F, Fut, E>(
+		&self,
+		animation_format: Option<AnimationFormat>,
+		f: F,
+		tg_config: &super::Config
+	) -> anyhow::Result<crate::matrix::sticker::Sticker>
+	where
+		F: FnOnce(&Image) -> Fut,
+		Fut: Future<Output = Result<String, E>>,
+		E: std::error::Error + Send + Sync + 'static
+	{
 		if self.is_video {
+			// TODO: do not create an error, if sticker is video
 			#[cfg(feature = "log")]
 			info!(
 				"    skip Sticker {}:{:02} {},	is a video",
@@ -77,7 +100,7 @@ impl Sticker {
 				self.positon,
 				self.emoji.as_deref().unwrap_or_default()
 			);
-			bail!("sticker is video")
+			bail!("sticker is video") //TODO: do not panic
 		}
 		#[cfg(feature = "log")]
 		info!(
@@ -126,12 +149,7 @@ impl Sticker {
 			self.positon,
 			self.emoji.as_deref().unwrap_or_default()
 		);
-		let (mxc_url, has_uploded) = image.upload(matrix_config, database).await?;
-		#[cfg(feature = "log")]
-		if !has_uploded {
-			info!("upload skipped; file with this hash was already uploaded");
-		}
-
+		let mxc_url = f(&image).await?;
 		//construct Sticker Struct
 		let tg_info = matrix::sticker::TgStickerInfo {
 			bot_api_id: Some(self.file_id.clone()),

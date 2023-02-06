@@ -70,12 +70,13 @@ impl FileDatabase {
 }
 
 impl Database for FileDatabase {
-	fn get(&self, hash: &Hash) -> Option<String> {
+	type Error = std::io::Error;
+	fn get(&self, hash: &Hash) -> Result<Option<String>, Self::Error> {
 		let lock = self.tree.read().unwrap();
 		let ret = lock.get(hash);
-		ret.cloned()
+		Ok(ret.cloned())
 	}
-	fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
+	fn add(&self, hash: Hash, url: String) -> Result<(), Self::Error> {
 		let hash_url = HashUrl { hash, url };
 		writeln!(&self.file, "{}", serde_json::to_string(&hash_url)?)?;
 		let mut lock = self.tree.write().unwrap();

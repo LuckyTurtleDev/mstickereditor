@@ -1,6 +1,7 @@
 use crate::{database, matrix, matrix::Config};
 use anyhow::anyhow;
 use flate2::write::GzDecoder;
+use generic_array::typenum::False;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
 use rayon;
@@ -93,21 +94,21 @@ impl Image {
 
 	///upload image to matrix
 	/// return mxc_url and true if image was uploaded now; false if it was already uploaded before and exist at the database
-	pub async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(String, bool)>
+	pub async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> Result<(String, bool),NewErrorTypeTodo> TODO: move database to import fuktion
 	where
 		D: database::Database
 	{
 		let hash = Lazy::new(|| database::hash(&self.data));
-		// if database is some and datbase.unwrap().get() is also some
-		let ret = if let Some(url) = database.and_then(|db| db.get(&hash)) {
-			(url, false)
-		} else {
-			let url = matrix::upload(matrix_config, &self.file_name, &self.data, &self.mime_type()?).await?;
-			if let Some(db) = database {
-				db.add(*hash, url.clone())?;
+		let mx_url = if let Some(db) = database { Some(db.get(&hash)?) } else { None }.flatten();
+		match mx_url {
+			Some(url) => Ok((url, false)),
+			None => {
+				let url = matrix::upload(matrix_config, &self.file_name, &self.data, &self.mime_type()?).await?;
+				if let Some(db) = database {
+					db.add(*hash, url.clone())?;
+				}
+				Ok((url, true))
 			}
-			(url, true)
-		};
-		Ok(ret)
+		}
 	}
 }

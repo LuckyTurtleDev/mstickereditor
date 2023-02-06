@@ -8,6 +8,8 @@ pub mod database;
 pub mod image;
 pub mod matrix;
 pub mod tg;
+mod error;
+pub use error::Error;
 
 //mod sub_commands;
 
