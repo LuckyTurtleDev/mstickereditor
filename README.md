@@ -77,6 +77,8 @@ Current are no prebuild binaries available. You must build mstickereditor by you
 
 For Arch Linux user or user of an Arch based distrubution an [aur package](https://aur.archlinux.org/packages/mstickereditor) is available.
 
+Nix user can use the NUR package [nur.repos.linyinfeng.mstickereditor](https://github.com/nix-community/nur-combined/tree/master/repos/linyinfeng/pkgs/mstickereditor/default.nix).
+
 ### Building:
 
  Install the following packages. (I recommand to use the package managment system of your operating system):
