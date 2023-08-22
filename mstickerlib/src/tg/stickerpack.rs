@@ -17,7 +17,7 @@ pub struct StickerPack {
 }
 
 impl StickerPack {
-	///request a stickerpack, by its name
+	/// Request a stickerpack by its name.
 	pub async fn get(name: &str, tg_config: &Config) -> anyhow::Result<Self> {
 		let mut pack: Result<Self, anyhow::Error> = tg_get(tg_config, "getStickerSet", [("name", name)]).await;
 		if let Ok(ref mut pack) = pack {
@@ -29,10 +29,13 @@ impl StickerPack {
 		pack
 	}
 
-	///Import pack to matrix.
-	///Function can partially fail, where some sticker can not be imported.
-	///Because of this the postion of failed stickers and the error, which has occurred will is also returned.
-	///It should be checked if the stickerpack is empty.
+	/// Import this pack to matrix.
+	///
+	/// This function can partially fail, where some sticker cannot be imported.
+	/// Because of this, the postion of failed stickers and the error, which has occurred,
+	/// will is also returned.
+	///
+	/// It should be checked if the stickerpack is empty.
 	pub async fn import<D>(
 		self,
 		animation_format: Option<AnimationFormat>,
@@ -48,7 +51,7 @@ impl StickerPack {
 		#[cfg(feature = "log")]
 		if self.is_video {
 			warn!(
-				"sticker pack {} include video stickers. Import of video sticker is not supported and will be skip.",
+				"sticker pack {} includes video stickers. Import of video stickers is not supported and will be skipped.",
 				self.name
 			);
 		}
@@ -79,15 +82,16 @@ impl StickerPack {
 	}
 }
 
-///convert telegram stickerpack url to pack name.
-///Url must start with `https://t.me/addstickers/`, `t.me/addstickers/` or `tg://addstickers?set=`
-pub fn pack_url_to_name<'a>(url: &'a str) -> anyhow::Result<&'a str> {
-	let mut name = url.strip_prefix("https://t.me/addstickers/");
-	if name.is_none() {
-		name = url.strip_prefix("t.me/addstickers/");
-	};
-	if name.is_none() {
-		name = url.strip_prefix("tg://addstickers?set=");
-	};
-	name.ok_or(anyhow!("{url:?} does not look like a Telegram StickerPack\nPack url should start with \"https://t.me/addstickers/\", \"t.me/addstickers/\" or \"tg://addstickers?set=\""))
+/// Convert telegram stickerpack url to pack name.
+///
+/// The url must start with `https://t.me/addstickers/`, `t.me/addstickers/` or
+/// `tg://addstickers?set=`.
+pub fn pack_url_to_name(url: &str) -> anyhow::Result<&str> {
+	url.strip_prefix("https://t.me/addstickers/").or_else(|| {
+		url.strip_prefix("t.me/addstickers/")
+	}).or_else(|| {
+		url.strip_prefix("tg://addstickers?set=")
+	}).ok_or_else(|| {
+		anyhow!("{url:?} does not look like a Telegram StickerPack\nPack url should start with \"https://t.me/addstickers/\", \"t.me/addstickers/\" or \"tg://addstickers?set=\"")
+	})
 }

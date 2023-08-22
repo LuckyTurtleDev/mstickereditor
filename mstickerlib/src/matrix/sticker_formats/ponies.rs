@@ -44,7 +44,8 @@ pub struct Sticker {
 	pub usage: HashSet<Usage>
 }
 
-/// **Warning:** `usage` will always been set to `Sticker` since, `Emoticon` is only usefull as tupple with String
+/// **Warning:** `usage` will always be set to [`Sticker`](Usage::Sticker), since
+/// [`Emoticon`](Usage::Emoticon) is only useful when paired with a string.
 impl From<matrix::sticker::Sticker> for Sticker {
 	fn from(value: crate::matrix::sticker::Sticker) -> Self {
 		Self {

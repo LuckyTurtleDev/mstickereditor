@@ -13,25 +13,26 @@ use log::info;
 
 #[derive(Clone, Debug, Deserialize, Hash)]
 pub struct Sticker {
-	///Emoji associated with the sticker
+	/// Emoji associated with the sticker.
 	pub emoji: Option<String>,
-	///Identifier for this file, which can be used to download or reuse the file
+	/// Identifier for this file, which can be used to download or reuse the file.
 	pub file_id: String,
-	///Unique identifier for this file, which is supposed to be the same over time and for different bots. Can't be used to download or reuse the file.
+	/// Unique identifier for this file, which is supposed to be the same over time and
+	/// for different bots. Can't be used to download or reuse the file.
 	pub file_unique_id: String,
 	//pub thumb: Option<PhotoSize>	TODO
-	///Sticker width
+	/// Sticker width
 	pub width: u32,
-	///Sticker height
+	/// Sticker height
 	pub height: u32,
 	#[serde(default)] //will be initialize in super::stickerpack::StickerPack::get()
-	///positon at the stickerpack
+	/// Positon in the stickerpack
 	pub positon: usize,
 	#[serde(default)] //will be initialize in … 	TODO: make this less ugly
 	pub pack_name: String,
-	///True, if the sticker is [animated](https://telegram.org/blog/animated-stickers)
+	/// True if the sticker is [animated](https://telegram.org/blog/animated-stickers).
 	pub is_animated: bool,
-	///True, if the sticker is a [video sticker](https://telegram.org/blog/video-stickers-better-reactions)
+	/// True if the sticker is a [video sticker](https://telegram.org/blog/video-stickers-better-reactions).
 	pub is_video: bool
 }
 
@@ -58,7 +59,7 @@ impl Sticker {
 		})
 	}
 
-	///import sticker to matrix
+	/// Import sticker to matrix
 	pub async fn import<D>(
 		&self,
 		animation_format: Option<AnimationFormat>,
