@@ -3,10 +3,11 @@ use anyhow::bail;
 use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
-pub(crate) mod sticker;
+mod sticker;
+pub use sticker::Sticker;
 
-pub(crate) mod stickerpack;
-use stickerpack::Pack;
+mod stickerpack;
+pub use stickerpack::{pack_url_to_name, StickerPack};
 
 #[derive(Deserialize)]
 pub struct Config {
@@ -61,6 +62,6 @@ where
 	Ok(result)
 }
 
-pub(crate) async fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<Pack> {
+pub(crate) async fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<StickerPack> {
 	tg_get(tg_config, "getStickerSet", [("name", name)]).await
 }

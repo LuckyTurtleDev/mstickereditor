@@ -7,16 +7,18 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
+use crate::matrix;
+
 #[derive(Serialize, Deserialize)]
 pub struct PackInfo {
-	display_name: String,
-	avatar_url: Option<String>
+	pub display_name: String,
+	pub avatar_url: Option<String>
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct StickerPack {
-	images: IndexMap<String, Sticker>,
-	pack: PackInfo
+	pub images: IndexMap<String, Sticker>,
+	pub pack: PackInfo
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
@@ -36,13 +38,15 @@ pub struct MetaData {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sticker {
-	body: String,
-	info: MetaData,
-	url: String,
-	usage: HashSet<Usage>
+	pub body: String,
+	pub info: MetaData,
+	pub url: String,
+	pub usage: HashSet<Usage>
 }
 
-impl From<crate::matrix::sticker::Sticker> for Sticker {
+/// **Warning:** `usage` will always be set to [`Sticker`](Usage::Sticker), since
+/// [`Emoticon`](Usage::Emoticon) is only useful when paired with a string.
+impl From<matrix::sticker::Sticker> for Sticker {
 	fn from(value: crate::matrix::sticker::Sticker) -> Self {
 		Self {
 			body: value.body,
@@ -53,14 +57,22 @@ impl From<crate::matrix::sticker::Sticker> for Sticker {
 	}
 }
 
-impl From<crate::matrix::stickerpack::StickerPack> for StickerPack {
+impl From<matrix::stickerpack::StickerPack> for StickerPack {
 	fn from(value: crate::matrix::stickerpack::StickerPack) -> Self {
 		Self {
 			images: value
 				.stickers
 				.into_iter()
 				.enumerate()
-				.map(|(i, sticker)| (i.to_string(), sticker.into()))
+				.map(|(i, sticker)| {
+					if let Some(emoticon) = sticker.emoticon.clone() {
+						let mut sticker: Sticker = sticker.into();
+						sticker.usage.insert(Usage::Emoticon);
+						(emoticon, sticker)
+					} else {
+						(format!("{i:04}"), sticker.into())
+					}
+				})
 				.collect(),
 			pack: PackInfo {
 				display_name: value.title,

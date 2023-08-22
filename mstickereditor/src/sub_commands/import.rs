@@ -4,7 +4,8 @@ use clap::Parser;
 use mstickerlib::{
 	database::simple_file::FileDatabase,
 	matrix,
-	matrix::{sticker_formats::maunium, stickerpack::StickerPack}
+	matrix::{sticker_formats::maunium, stickerpack::StickerPack},
+	tg::pack_url_to_name
 };
 use std::{path::PathBuf, process::exit};
 use tokio::fs;
@@ -41,21 +42,11 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let animation_fromat = if opt.dryrun { None } else { Some(&config.sticker) };
 	let mut packs: Vec<String> = Vec::new();
 	while let Some(pack) = opt.packs.pop() {
-		let mut id = pack.strip_prefix("https://t.me/addstickers/");
-		if id.is_none() {
-			id = pack.strip_prefix("t.me/addstickers/");
-		};
-		if id.is_none() {
-			id = pack.strip_prefix("tg://addstickers?set=");
-		};
-		match id {
-			None => {
-				eprintln!("{pack:?} does not look like a Telegram StickerPack");
-				eprintln!("Pack url should start with \"https://t.me/addstickers/\", \"t.me/addstickers/\" or \"tg://addstickers?set=\"");
-				exit(1);
-			},
-			Some(id) => packs.push(id.into())
-		};
+		let name = pack_url_to_name(&pack).unwrap_or_else(|err| {
+			eprintln!("{err}");
+			exit(1)
+		});
+		packs.push(name.to_owned());
 	}
 	let database = FileDatabase::new(&*DATABASE_FILE)?;
 

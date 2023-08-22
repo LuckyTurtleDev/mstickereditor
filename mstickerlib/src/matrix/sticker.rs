@@ -10,7 +10,7 @@ pub struct Sticker {
 	pub image: Image,
 	pub thumbnail: Option<Image>,
 	///abbreviation for the sticker, to be used inline
-	pub emoticons: Option<String>,
+	pub emoticon: Option<String>,
 	///unicode emoji with are assioted with the sticker
 	pub emoji: Vec<String>,
 	pub tg_sticker: Option<TgStickerInfo>
@@ -27,7 +27,7 @@ pub struct Image {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TgStickerInfo {
 	///pack where the sticker is from
-	pub pack_info: TgPackInfo,
+	pub pack_name: String,
 	pub bot_api_id: Option<String>,
 	pub client_api_id: Option<String>,
 	pub emoji: Vec<String>
@@ -36,7 +36,7 @@ pub struct TgStickerInfo {
 impl From<maunium::TgStickerInfo> for TgStickerInfo {
 	fn from(value: maunium::TgStickerInfo) -> Self {
 		Self {
-			pack_info: value.pack.into(),
+			pack_name: value.pack.short_name,
 			bot_api_id: None,
 			client_api_id: Some(value.id),
 			emoji: value.emoticons
@@ -48,11 +48,11 @@ impl From<maunium::Sticker> for Sticker {
 	fn from(value: maunium::Sticker) -> Self {
 		let image = Image {
 			url: value.url,
-			meta_data: value.metadata
+			meta_data: value.info.image_info
 		};
 		let thumbnail = Image {
-			url: value.thumbnail_url,
-			meta_data: value.thumbnail_info
+			url: value.info.thumbnail_url,
+			meta_data: value.info.thumbnail_info
 		};
 		let thumbnail = if image == thumbnail { None } else { Some(thumbnail) };
 		let tg_sticker: Option<TgStickerInfo> = value.tg_sticker.map(|f| f.into());
@@ -60,7 +60,7 @@ impl From<maunium::Sticker> for Sticker {
 			body: value.body,
 			image,
 			thumbnail,
-			emoticons: None,
+			emoticon: None,
 			emoji: tg_sticker.as_ref().map(|f| f.emoji.to_owned()).unwrap_or_default(),
 			tg_sticker
 		}
