@@ -27,6 +27,7 @@ pub struct Sticker {
 	pub url: String,
 	pub info: StickerInfo,
 	/// must always be "m.sticker", use `Default::default` to initialize it.
+	#[serde(default)]
 	pub msgtype: MustBe!("m.sticker"),
 	pub id: String,
 	#[serde(rename = "net.maunium.telegram.sticker")]
