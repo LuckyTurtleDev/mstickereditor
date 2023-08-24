@@ -8,7 +8,7 @@
 Import sticker packs from telegram, to be used at the [Maunium sticker picker](https://github.com/maunium/stickerpicker) for Matrix
 
 ## Features:
-* import Stickerpacks from Telegram (including animated Stickerspacks)
+* import Stickerpacks from Telegram (including animated Stickerspacks; video stickers are currently not supported)
 * enable Stickerpicker widget for supported Matrix Clients
 
 ## Client Support for Animated Sticker:
