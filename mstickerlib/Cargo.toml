@@ -9,7 +9,7 @@ edition = "2021"
 license = "Apache-2.0"
 description= "Private implementation detail of mstickereditor"
 repository = "https://github.com/LuckyTurtleDev/mstickereditor"
-include = ["/src/**/*.rs", "../LICENSE"]
+include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
 
 [dependencies]
 anyhow = "1.0"
