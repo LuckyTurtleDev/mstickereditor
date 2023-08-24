@@ -1,19 +1,18 @@
 use super::{Database, Hash};
 
-use anyhow::{self};
-
+use anyhow;
+use async_trait::async_trait;
+use futures_util::stream::StreamExt as _;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 use serde_json;
-use std::{
-	collections::BTreeMap,
-	fs,
-	fs::File,
-	io,
-	io::{BufRead, Write},
-	path::Path,
-	sync::{Arc, RwLock}
+use std::{collections::BTreeMap, io, path::Path};
+use tokio::{
+	fs::{self, File},
+	io::{AsyncBufReadExt as _, AsyncWriteExt as _, BufReader},
+	sync::{Mutex, RwLock}
 };
+use tokio_stream::wrappers::LinesStream;
 
 #[derive(Debug, Deserialize, Serialize)]
 struct HashUrl {
@@ -25,21 +24,22 @@ struct HashUrl {
 /// simple implemtation of the `Database` traid,
 /// with does save data to a file
 pub struct FileDatabase {
-	tree: Arc<RwLock<BTreeMap<Hash, String>>>,
-	file: fs::File
+	tree: RwLock<BTreeMap<Hash, String>>,
+	file: Mutex<fs::File>
 }
 
 impl FileDatabase {
-	pub fn new<P>(path: P) -> io::Result<FileDatabase>
+	pub async fn new<P>(path: P) -> io::Result<FileDatabase>
 	where
 		P: AsRef<Path>
 	{
 		let path = path.as_ref();
 		let mut tree = BTreeMap::<Hash, String>::new();
-		match File::open(path) {
+		match File::open(path).await {
 			Ok(file) => {
-				let bufreader = std::io::BufReader::new(file);
-				for (i, line) in bufreader.lines().enumerate() {
+				let bufreader = BufReader::new(file);
+				let mut lines = LinesStream::new(bufreader.lines()).enumerate();
+				while let Some((i, line)) = lines.next().await {
 					let hashurl: Result<HashUrl, serde_json::Error> = serde_json::from_str(&line?);
 					match hashurl {
 						Ok(value) => {
@@ -61,25 +61,37 @@ impl FileDatabase {
 				return Err(error);
 			}
 		};
-		let file = fs::OpenOptions::new().write(true).append(true).create(true).open(path)?;
+		let file = fs::OpenOptions::new()
+			.write(true)
+			.append(true)
+			.create(true)
+			.open(path)
+			.await?;
 		Ok(FileDatabase {
-			tree: Arc::new(RwLock::new(tree)),
-			file
+			tree: RwLock::new(tree),
+			file: Mutex::new(file)
 		})
 	}
 }
 
+#[async_trait]
 impl Database for FileDatabase {
-	fn get(&self, hash: &Hash) -> Option<String> {
-		let lock = self.tree.read().unwrap();
+	async fn get(&self, hash: &Hash) -> Option<String> {
+		let lock = self.tree.read().await;
 		let ret = lock.get(hash);
 		ret.cloned()
 	}
-	fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
+
+	async fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
 		let hash_url = HashUrl { hash, url };
-		writeln!(&self.file, "{}", serde_json::to_string(&hash_url)?)?;
-		let mut lock = self.tree.write().unwrap();
-		lock.insert(hash_url.hash, hash_url.url);
+
+		let mut file = self.file.lock().await;
+		file.write_all(&serde_json::to_vec(&hash_url)?).await?;
+		file.write_all(b"\n").await?;
+		drop(file);
+
+		let mut tree = self.tree.write().await;
+		tree.insert(hash_url.hash, hash_url.url);
 		Ok(())
 	}
 }

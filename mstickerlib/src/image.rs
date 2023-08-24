@@ -10,7 +10,7 @@ use strum_macros::Display;
 use tempfile::NamedTempFile;
 use tokio;
 
-#[derive(Clone, Debug, Default, Deserialize, Display)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
 #[serde(tag = "animation_format", rename_all = "lowercase")]
 pub enum AnimationFormat {
 	Gif {
@@ -98,16 +98,18 @@ impl Image {
 		D: database::Database
 	{
 		let hash = Lazy::new(|| database::hash(&self.data));
+
 		// if database is some and datbase.unwrap().get() is also some
-		let ret = if let Some(url) = database.and_then(|db| db.get(&hash)) {
-			(url, false)
-		} else {
-			let url = matrix::upload(matrix_config, &self.file_name, &self.data, &self.mime_type()?).await?;
-			if let Some(db) = database {
-				db.add(*hash, url.clone())?;
+		if let Some(db) = database {
+			if let Some(url) = db.get(&hash).await {
+				return Ok((url, false));
 			}
-			(url, true)
-		};
-		Ok(ret)
+		}
+
+		let url = matrix::upload(matrix_config, &self.file_name, &self.data, &self.mime_type()?).await?;
+		if let Some(db) = database {
+			db.add(*hash, url.clone()).await?;
+		}
+		Ok((url, true))
 	}
 }

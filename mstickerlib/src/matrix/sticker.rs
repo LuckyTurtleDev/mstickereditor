@@ -1,7 +1,4 @@
-use super::{
-	sticker_formats::{ponies::MetaData, *},
-	stickerpack::TgPackInfo
-};
+use super::sticker_formats::{ponies::MetaData, *};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]

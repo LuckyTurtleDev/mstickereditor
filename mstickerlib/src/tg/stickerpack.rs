@@ -55,11 +55,13 @@ impl StickerPack {
 				self.name
 			);
 		}
-		let stickers_import_features = self
+
+		let stickers_import_futures = self
 			.stickers
 			.iter()
-			.map(|f| f.import(animation_format.clone(), database, tg_config, matrix_config));
-		let stickers = join_all(stickers_import_features).await;
+			.map(|f| f.import(animation_format, database, tg_config, matrix_config));
+		let stickers = join_all(stickers_import_futures).await;
+
 		let mut ok_stickers = Vec::new();
 		let mut err_stickers = Vec::new();
 		for (i, sticker) in stickers.into_iter().enumerate() {
@@ -68,6 +70,7 @@ impl StickerPack {
 				Err(err) => err_stickers.push((i, err))
 			}
 		}
+
 		let stickerpack = matrix::stickerpack::StickerPack {
 			title: self.title.clone(),
 			id: format!("tg_name_{}", self.name),

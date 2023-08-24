@@ -48,7 +48,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		});
 		packs.push(name.to_owned());
 	}
-	let database = FileDatabase::new(&*DATABASE_FILE)?;
+	let database = FileDatabase::new(&*DATABASE_FILE).await?;
 
 	for pack in packs {
 		let matrix_pack = StickerPack::import_pack(
