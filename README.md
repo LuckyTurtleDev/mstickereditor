@@ -73,12 +73,12 @@ The field has no effect, if the sticker is not animated or will be converted to 
 `animation_format`: is used to convert the animated stickers to, you can either choose `webp` (default) or `gif`.
 
 ## Installation:
-Current are no prebuild binaries available. You must build mstickereditor by yourself. See below.
 
 For Arch Linux user or user of an Arch based distrubution an [aur package](https://aur.archlinux.org/packages/mstickereditor) is available.
 
 Nix user can use the NUR package [nur.repos.linyinfeng.mstickereditor](https://github.com/nix-community/nur-combined/tree/master/repos/linyinfeng/pkgs/mstickereditor/default.nix).
 
+Current are no prebuild binaries available. So user of other platforms/distros must build mstickereditor themself yourself. See below.
 ### Building:
 
  Install the following packages. (I recommand to use the package managment system of your operating system):
@@ -92,4 +92,5 @@ To build and install mstickereditor execute the following command:
 ```bash
 cargo install --locked mstickereditor
 ```
+Make sure that `~/.cargo/bin` is listed in the `PATH` environment variable otherwise, the `mstickereditor` executable can not be found.
 Check out [rust doc](https://doc.rust-lang.org/cargo/commands/cargo-install.html) for more information about `cargo install`.
