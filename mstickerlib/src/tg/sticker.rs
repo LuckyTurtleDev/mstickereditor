@@ -11,33 +11,22 @@ use std::path::Path;
 #[cfg(feature = "log")]
 use log::info;
 
+///see <https://core.telegram.org/bots/api#photosize>
 #[derive(Clone, Debug, Deserialize, Hash)]
-pub struct Sticker {
-	/// Emoji associated with the sticker.
-	pub emoji: Option<String>,
+pub struct PhotoSize {
 	/// Identifier for this file, which can be used to download or reuse the file.
 	pub file_id: String,
 	/// Unique identifier for this file, which is supposed to be the same over time and
 	/// for different bots. Can't be used to download or reuse the file.
 	pub file_unique_id: String,
-	//pub thumb: Option<PhotoSize>	TODO
 	/// Sticker width
 	pub width: u32,
 	/// Sticker height
-	pub height: u32,
-	#[serde(default)] //will be initialize in super::stickerpack::StickerPack::get()
-	/// Positon in the stickerpack
-	pub positon: usize,
-	#[serde(default)] //will be initialize in … 	TODO: make this less ugly
-	pub pack_name: String,
-	/// True if the sticker is [animated](https://telegram.org/blog/animated-stickers).
-	pub is_animated: bool,
-	/// True if the sticker is a [video sticker](https://telegram.org/blog/video-stickers-better-reactions).
-	pub is_video: bool
+	pub height: u32
 }
-
-impl Sticker {
-	pub async fn download_image(&self, tg_config: &super::Config) -> anyhow::Result<Image> {
+impl PhotoSize {
+	/// download the image of the PhotoSize
+	pub async fn download(&self, tg_config: &super::Config) -> anyhow::Result<Image> {
 		let file: super::File = super::tg_get(tg_config, "getFile", [("file_id", &self.file_id)]).await?;
 		let data = CLIENT
 			.get()
@@ -59,6 +48,60 @@ impl Sticker {
 		})
 	}
 
+	pub async fn import<D>(
+		&self,
+		animation_format: Option<AnimationFormat>,
+		database: Option<&D>,
+		tg_config: &super::Config,
+		matrix_config: &crate::matrix::Config,
+		pack_name: &str,
+		positon: usize,
+		emoji: Option<&str>,
+		thumb: bool
+	) -> anyhow::Result<matrix::sticker::Image>
+	where
+		D: crate::database::Database
+	{
+		#[cfg(feature = "log")]
+		let emoji = emoji.as_deref().unwrap_or_default();
+		#[cfg(feature = "log")]
+		let thumb = if thumb { " thumbnail" } else { "" };
+		#[cfg(feature = "log")]
+		info!("download sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
+		// download and convert sticker from telegram
+		let image = self.download(tg_config).await?.convert_tgs_if_some(animation_format).await?;
+		#[cfg(feature = "log")]
+		info!("  upload sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
+		let (url, has_uploded) = image.upload(matrix_config, database).await?;
+		#[cfg(feature = "log")]
+		if !has_uploded {
+			info!("upload skipped; file with this hash was already uploaded");
+		}
+		let meta_data = ponies::MetaData::try_from(image)?;
+		Ok(matrix::sticker::Image { url, meta_data })
+	}
+}
+
+#[derive(Clone, Debug, Deserialize, Hash)]
+pub struct Sticker {
+	/// Emoji associated with the sticker.
+	pub emoji: Option<String>,
+	/// Identifier for this file, which can be used to download or reuse the file.
+	#[serde(flatten)]
+	pub image: PhotoSize,
+	pub thumbnail: Option<PhotoSize>,
+	#[serde(default)] //will be initialize in super::stickerpack::StickerPack::get()
+	/// Positon in the stickerpack
+	pub positon: usize,
+	#[serde(default)] //will be initialize in … 	TODO: make this less ugly
+	pub pack_name: String,
+	/// True if the sticker is [animated](https://telegram.org/blog/animated-stickers).
+	pub is_animated: bool,
+	/// True if the sticker is a [video sticker](https://telegram.org/blog/video-stickers-better-reactions).
+	pub is_video: bool
+}
+
+impl Sticker {
 	/// Import sticker to matrix
 	pub async fn import<D>(
 		&self,
@@ -89,11 +132,36 @@ impl Sticker {
 		);
 
 		// download sticker from telegram
-		let mut image = self.download_image(tg_config).await?;
-		// convert sticker from lottie to gif if neccessary
-		if let Some(format) = animation_format {
-			image = image.convert_tgs(format.to_owned()).await?;
-		}
+		let image = self
+			.image
+			.import(
+				animation_format,
+				database,
+				tg_config,
+				matrix_config,
+				&self.pack_name,
+				self.positon,
+				self.emoji.as_deref(),
+				false
+			)
+			.await?;
+		let thumb = match self.thumbnail.as_ref() {
+			None => None, //async map is currently not supported by std
+			Some(thumb) => Some(
+				thumb
+					.import(
+						animation_format,
+						database,
+						tg_config,
+						matrix_config,
+						&self.pack_name,
+						self.positon,
+						self.emoji.as_deref(),
+						false
+					)
+					.await?
+			)
+		};
 
 		// store file on disk if desired
 		/*
@@ -111,46 +179,17 @@ impl Sticker {
 			.await?;
 		}*/
 
-		let mimetype = format!(
-			"image/{}",
-			Path::new(&image.file_name)
-				.extension()
-				.ok_or_else(|| anyhow!("ERROR: extracting mimetype from path {}", image.file_name))?
-				.to_str()
-				.ok_or_else(|| anyhow!("ERROR: converting mimetype to string"))?
-		);
-
-		#[cfg(feature = "log")]
-		info!(
-			"  upload sticker {}:{:02} {}",
-			self.pack_name,
-			self.positon,
-			self.emoji.as_deref().unwrap_or_default()
-		);
-		let (mxc_url, has_uploded) = image.upload(matrix_config, database).await?;
-		#[cfg(feature = "log")]
-		if !has_uploded {
-			info!("upload skipped; file with this hash was already uploaded");
-		}
-
 		//construct Sticker Struct
 		let tg_info = matrix::sticker::TgStickerInfo {
-			bot_api_id: Some(self.file_id.clone()),
+			bot_api_id: Some(self.image.file_id.clone()),
 			client_api_id: None,
 			emoji: self.emoji.clone().into_iter().collect(),
 			pack_name: self.pack_name.clone()
 		};
-		let meta_data = ponies::MetaData {
-			w: image.width,
-			h: image.height,
-			size: image.data.len(),
-			mimetype
-		};
-		let sticker_imag = matrix::sticker::Image { url: mxc_url, meta_data };
 		let sticker = matrix::sticker::Sticker {
 			body: self.emoji.clone().unwrap_or_default(),
-			image: sticker_imag,
-			thumbnail: None,
+			image,
+			thumbnail: thumb,
 			emoji: self.emoji.clone().into_iter().collect(),
 			emoticon: None,
 			tg_sticker: Some(tg_info)

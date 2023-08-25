@@ -1,5 +1,7 @@
 use super::sticker_formats::{ponies::MetaData, *};
+use anyhow::anyhow;
 use serde::{Deserialize, Serialize};
+use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sticker {
@@ -14,6 +16,7 @@ pub struct Sticker {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+/// Matrix Image struct, containing url and meta_data
 pub struct Image {
 	pub url: String,
 	pub meta_data: MetaData

@@ -3,9 +3,10 @@
 //! This is already supported by many matrix clients like Neko, Cinny, Fluffychat and more.
 //! Keep in mind that ponies specification is not stable yet.
 
+use anyhow::anyhow;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::collections::HashSet;
+use std::{collections::HashSet, path::Path};
 
 use crate::matrix;
 
@@ -34,6 +35,17 @@ pub struct MetaData {
 	pub h: u32,
 	pub size: usize,
 	pub mimetype: String
+}
+impl TryFrom<crate::image::Image> for MetaData {
+	type Error = anyhow::Error;
+	fn try_from(value: crate::image::Image) -> Result<Self, Self::Error> {
+		Ok(Self {
+			w: value.width,
+			h: value.height,
+			size: value.data.len(),
+			mimetype: value.mime_type()?
+		})
+	}
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
