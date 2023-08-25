@@ -16,11 +16,11 @@ Import sticker packs from telegram, to be used at the [Maunium sticker picker](h
 |--------------------------|-------------|-------------------|-------------------|
 | [Cinny]                  | ✅          | ✅                | ponies            |
 | [Element] Desktop/Web    | ✅          | ✅                | widget            |
-| [Element] Android        | no autoplay | static image only | widget            |
+| [Element] Android        | no autoplay | ✅                | widget            |
 | [FluffyChat]             | ✅          | ✅                | ponies            |
 | [Nheko]                  | ✅          | ✅                | ponies            |
 | [Schildi] Desktop/Web    | ✅          | ✅                | widget            |
-| [Schildi] Android        | ✅          | static image only | widget            |
+| [Schildi] Android        | ✅          | ✅                | widget            |
 | [mautrix-telegram-bridge]| ✅          | static image only | -                 |
 
 Other clients were not tested.
