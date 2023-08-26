@@ -21,7 +21,7 @@ pub enum AnimationFormat {
 	Webp
 }
 
-/// cotain a image and its meta data
+/// Generic image struct, containing the image data and its meta data.
 pub struct Image {
 	pub file_name: String,
 	pub data: Vec<u8>,
@@ -39,6 +39,13 @@ impl Image {
 				.to_str()
 				.ok_or_else(|| anyhow::anyhow!("ERROR: converting mimetype to string"))?
 		))
+	}
+
+	pub async fn convert_tgs_if_some(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
+		match animation_format {
+			None => Ok(self),
+			Some(animation_format) => self.convert_tgs(animation_format).await
+		}
 	}
 
 	/// convert `tgs` image to webp or gif, ignore other formats

@@ -4,12 +4,12 @@ use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 mod sticker;
-pub use sticker::Sticker;
+pub use sticker::{PhotoSize, Sticker};
 
 mod stickerpack;
 pub use stickerpack::{pack_url_to_name, StickerPack};
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
 	pub bot_key: String
 }

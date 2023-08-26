@@ -77,7 +77,7 @@ impl StickerPack {
 		));
 
 		// download sticker from telegram
-		let mut image = tg_sticker.download_image(tg_config).await?;
+		let mut image = tg_sticker.image.download(tg_config).await?;
 		// convert sticker from lottie to gif if neccessary
 		if image.file_name.ends_with(".tgs") {
 			if let Some(format) = animation_format {
@@ -123,7 +123,7 @@ impl StickerPack {
 
 			//construct Sticker Struct
 			let tg_info = TgStickerInfo {
-				bot_api_id: Some(tg_sticker.file_id.clone()),
+				bot_api_id: Some(tg_sticker.image.file_id.clone()),
 				client_api_id: None,
 				emoji: tg_sticker.emoji.clone().into_iter().collect(),
 				pack_name: tg_stickerpack.name.clone()

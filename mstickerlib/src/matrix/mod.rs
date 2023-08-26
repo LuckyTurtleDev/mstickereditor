@@ -9,7 +9,7 @@ pub mod sticker;
 pub mod sticker_formats;
 pub mod stickerpack;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
 	pub homeserver_url: String,
 	pub user: String,

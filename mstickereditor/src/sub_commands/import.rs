@@ -39,7 +39,6 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			.await
 			.expect("Error connecting to Matrix homeserver");
 	}
-	let animation_fromat = if opt.dryrun { None } else { Some(&config.sticker) };
 	let mut packs: Vec<String> = Vec::new();
 	while let Some(pack) = opt.packs.pop() {
 		let name = pack_url_to_name(&pack).unwrap_or_else(|err| {
@@ -58,7 +57,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			opt.dryrun,
 			opt.save,
 			&config.matrix,
-			animation_fromat
+			Some(&config.sticker)
 		)
 		.await
 		.with_context(|| format!("failed to import pack {pack}"))?;

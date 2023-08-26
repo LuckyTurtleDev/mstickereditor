@@ -43,7 +43,7 @@ pub fn load_config_file() -> anyhow::Result<Config> {
 	Ok(config)
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct Config {
 	pub telegram: tg::Config,
 	pub matrix: matrix::Config,
