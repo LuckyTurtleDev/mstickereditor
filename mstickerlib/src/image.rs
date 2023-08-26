@@ -21,7 +21,7 @@ pub enum AnimationFormat {
 	Webp
 }
 
-/// generic image struct cotaining, the image data and its meta data
+/// Generic image struct, containing the image data and its meta data.
 pub struct Image {
 	pub file_name: String,
 	pub data: Vec<u8>,
