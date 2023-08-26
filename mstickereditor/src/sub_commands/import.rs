@@ -2,7 +2,7 @@ use crate::{load_config_file, DATABASE_FILE};
 use anyhow::Context;
 use clap::Parser;
 use mstickerlib::{
-	database::simple_file::FileDatabase,
+	database::FileDatabase,
 	matrix,
 	matrix::{sticker_formats::maunium, stickerpack::StickerPack},
 	tg::pack_url_to_name

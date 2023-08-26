@@ -2,7 +2,10 @@ use anyhow;
 use async_trait::async_trait;
 use sha2::{Digest, Sha512};
 
-pub mod simple_file;
+mod simple_file;
+pub use simple_file::FileDatabase;
+mod dummy_database;
+pub use dummy_database::DummyDatabase;
 
 pub type Hash = [u8; 64];
 

@@ -15,6 +15,7 @@ include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
 anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
+derive-getters = "0.3.0"
 flate2 = "1.0"
 futures-util = "0.3.25"
 generic-array = { version = "0.14" , features = ["serde"] }

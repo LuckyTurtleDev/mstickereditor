@@ -1,19 +1,21 @@
-use super::{sticker::Sticker, tg_get, Config};
-use crate::{database::Database, image::AnimationFormat, matrix};
+use super::{sticker::Sticker, tg_get, Config, ImportConfig};
+use crate::{database::Database, matrix};
 use anyhow::anyhow;
+use derive_getters::Getters;
 use futures_util::future::join_all;
 use serde::Deserialize;
 
 #[cfg(feature = "log")]
 use log::{info, warn};
 
-#[derive(Clone, Debug, Deserialize, Hash)]
+#[derive(Clone, Debug, Deserialize, Getters, Hash)]
+#[non_exhaustive]
 pub struct StickerPack {
-	pub name: String,
-	pub title: String,
-	pub is_animated: bool,
-	pub is_video: bool,
-	pub stickers: Vec<Sticker>
+	pub(crate) name: String,
+	pub(crate) title: String,
+	pub(crate) is_animated: bool,
+	pub(crate) is_video: bool,
+	pub(crate) stickers: Vec<Sticker>
 }
 
 impl StickerPack {
@@ -36,12 +38,11 @@ impl StickerPack {
 	/// will is also returned.
 	///
 	/// It should be checked if the stickerpack is empty.
-	pub async fn import<D>(
+	pub async fn import<'a, D>(
 		self,
-		animation_format: Option<AnimationFormat>,
-		database: Option<&D>,
 		tg_config: &Config,
-		matrix_config: &matrix::Config
+		matrix_config: &matrix::Config,
+		advance_config: &ImportConfig<'a, D>
 	) -> (matrix::stickerpack::StickerPack, Vec<(usize, anyhow::Error)>)
 	where
 		D: Database
@@ -59,7 +60,7 @@ impl StickerPack {
 		let stickers_import_futures = self
 			.stickers
 			.iter()
-			.map(|f| f.import(animation_format, database, tg_config, matrix_config));
+			.map(|f| f.import(tg_config, matrix_config, advance_config));
 		let stickers = join_all(stickers_import_futures).await;
 
 		let mut ok_stickers = Vec::new();

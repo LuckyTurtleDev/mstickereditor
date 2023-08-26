@@ -1,10 +1,8 @@
-use crate::{
-	image::{AnimationFormat, Image},
-	matrix,
-	matrix::sticker_formats::ponies,
-	CLIENT
-};
+use super::ImportConfig;
+use crate::{image::Image, matrix, matrix::sticker_formats::ponies, CLIENT};
 use anyhow::bail;
+use derive_getters::Getters;
+use log::warn;
 use serde::Deserialize;
 
 #[cfg(feature = "log")]
@@ -12,6 +10,7 @@ use log::info;
 
 ///see <https://core.telegram.org/bots/api#photosize>
 #[derive(Clone, Debug, Deserialize, Hash)]
+#[non_exhaustive]
 pub struct PhotoSize {
 	/// Identifier for this file, which can be used to download or reuse the file.
 	pub file_id: String,
@@ -47,12 +46,11 @@ impl PhotoSize {
 		})
 	}
 
-	pub async fn import<D>(
+	pub async fn import<'a, D>(
 		&self,
-		animation_format: Option<AnimationFormat>,
-		database: Option<&D>,
 		tg_config: &super::Config,
 		matrix_config: &crate::matrix::Config,
+		advance_config: &ImportConfig<'a, D>,
 		pack_name: &str,
 		positon: usize,
 		emoji: Option<&str>,
@@ -68,46 +66,59 @@ impl PhotoSize {
 		#[cfg(feature = "log")]
 		info!("download sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
 		// download and convert sticker from telegram
-		let image = self.download(tg_config).await?.convert_tgs_if_some(animation_format).await?;
+		let image = self
+			.download(tg_config)
+			.await?
+			.convert_tgs_if_some(advance_config.animation_format)
+			.await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
-		let (url, has_uploded) = image.upload(matrix_config, database).await?;
-		#[cfg(feature = "log")]
-		if !has_uploded {
-			info!("upload skipped; file with this hash was already uploaded");
-		}
+		let url = if advance_config.dry_run {
+			#[cfg(feature = "log")]
+			{
+				warn!("upload skipped; dryrun");
+			}
+			"!!! DRY_RUN !!!".to_owned()
+		} else {
+			let (url, has_uploded) = image.upload(matrix_config, advance_config.database).await?;
+			#[cfg(feature = "log")]
+			if !has_uploded {
+				info!("upload skipped; file with this hash was already uploaded");
+			}
+			url
+		};
 		let meta_data = ponies::MetaData::try_from(image)?;
 		Ok(matrix::sticker::Image { url, meta_data })
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, Hash)]
+#[derive(Clone, Debug, Deserialize, Getters, Hash)]
+#[non_exhaustive]
 pub struct Sticker {
 	/// Emoji associated with the sticker.
-	pub emoji: Option<String>,
+	pub(crate) emoji: Option<String>,
 	/// Identifier for this file, which can be used to download or reuse the file.
 	#[serde(flatten)]
-	pub image: PhotoSize,
-	pub thumbnail: Option<PhotoSize>,
+	pub(crate) image: PhotoSize,
+	pub(crate) thumbnail: Option<PhotoSize>,
 	#[serde(default)] //will be initialize in super::stickerpack::StickerPack::get()
 	/// Positon in the stickerpack
-	pub positon: usize,
+	pub(crate) positon: usize,
 	#[serde(default)] //will be initialize in … 	TODO: make this less ugly
-	pub pack_name: String,
+	pub(crate) pack_name: String,
 	/// True if the sticker is [animated](https://telegram.org/blog/animated-stickers).
-	pub is_animated: bool,
+	is_animated: bool,
 	/// True if the sticker is a [video sticker](https://telegram.org/blog/video-stickers-better-reactions).
-	pub is_video: bool
+	pub(crate) is_video: bool
 }
 
 impl Sticker {
 	/// Import sticker to matrix
-	pub async fn import<D>(
+	pub async fn import<'a, D>(
 		&self,
-		animation_format: Option<AnimationFormat>,
-		database: Option<&D>,
 		tg_config: &super::Config,
-		matrix_config: &crate::matrix::Config
+		matrix_config: &crate::matrix::Config,
+		advance_config: &ImportConfig<'a, D>
 	) -> anyhow::Result<crate::matrix::sticker::Sticker>
 	where
 		D: crate::database::Database
@@ -134,10 +145,9 @@ impl Sticker {
 		let image = self
 			.image
 			.import(
-				animation_format,
-				database,
 				tg_config,
 				matrix_config,
+				advance_config,
 				&self.pack_name,
 				self.positon,
 				self.emoji.as_deref(),
@@ -149,10 +159,9 @@ impl Sticker {
 			Some(thumb) => Some(
 				thumb
 					.import(
-						animation_format,
-						database,
 						tg_config,
 						matrix_config,
+						advance_config,
 						&self.pack_name,
 						self.positon,
 						self.emoji.as_deref(),
