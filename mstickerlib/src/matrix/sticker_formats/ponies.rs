@@ -3,10 +3,9 @@
 //! This is already supported by many matrix clients like Neko, Cinny, Fluffychat and more.
 //! Keep in mind that ponies specification is not stable yet.
 
-use anyhow::anyhow;
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, path::Path};
+use std::collections::HashSet;
 
 use crate::matrix;
 

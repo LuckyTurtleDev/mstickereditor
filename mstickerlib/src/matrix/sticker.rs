@@ -1,7 +1,6 @@
 use super::sticker_formats::{ponies::MetaData, *};
-use anyhow::anyhow;
+
 use serde::{Deserialize, Serialize};
-use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sticker {

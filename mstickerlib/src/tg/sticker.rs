@@ -4,9 +4,8 @@ use crate::{
 	matrix::sticker_formats::ponies,
 	CLIENT
 };
-use anyhow::{anyhow, bail};
+use anyhow::bail;
 use serde::Deserialize;
-use std::path::Path;
 
 #[cfg(feature = "log")]
 use log::info;
@@ -63,7 +62,7 @@ impl PhotoSize {
 		D: crate::database::Database
 	{
 		#[cfg(feature = "log")]
-		let emoji = emoji.as_deref().unwrap_or_default();
+		let emoji = emoji.unwrap_or_default();
 		#[cfg(feature = "log")]
 		let thumb = if thumb { " thumbnail" } else { "" };
 		#[cfg(feature = "log")]

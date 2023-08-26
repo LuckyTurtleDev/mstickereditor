@@ -16,7 +16,7 @@ pub struct Opt {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct INDEX {
+struct Index {
 	packs: Vec<String>,
 	homeserver_url: String
 }
@@ -42,7 +42,7 @@ pub fn run(opt: Opt) -> anyhow::Result<()> {
 		Some(value) => value,
 		None => load_config_file()?.matrix.homeserver_url
 	};
-	let index = INDEX { packs, homeserver_url };
+	let index = Index { packs, homeserver_url };
 	let string = match opt.pretty {
 		true => serde_json::to_string_pretty(&index).unwrap(),
 		false => serde_json::to_string(&index).unwrap()
