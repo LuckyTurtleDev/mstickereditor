@@ -118,7 +118,8 @@ impl Image {
 				tmp.write_all(&self.data)?;
 				tmp.flush()?;
 
-				self.file_name.truncate(self.file_name.len() - 3);
+				self.file_name.truncate(self.file_name.len() - 1);
+				self.file_name += "p";
 				let (webp, width, height) = webm2webp(&tmp.path())?;
 				self.data = webp.to_vec();
 				self.width = width;
