@@ -126,7 +126,7 @@ impl Image {
 				self.file_name.truncate(self.file_name.len() - 1);
 				self.file_name += "p";
 				let (webp, width, height) = webm2webp(&tmp.path())?;
-				self.data = webp.to_vec();
+				self.data = Arc::new(webp.to_vec());
 				self.width = width;
 				self.height = height;
 
