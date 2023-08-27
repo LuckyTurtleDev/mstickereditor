@@ -8,6 +8,7 @@ pub mod database;
 pub mod image;
 pub mod matrix;
 pub mod tg;
+mod video;
 
 //mod sub_commands;
 
@@ -24,6 +25,13 @@ unsafe impl Sync for Client {}
 struct Client {
 	lock: RwLock<()>,
 	client: UnsafeCell<Option<reqwest::Client>>
+}
+
+// XXX Hacky: We abuse the fact that a client will be exactly once either set or
+// created, so we can ensure this function will be called exactly once. Also, the
+// HTTP client will always be needed before ffmpeg.
+fn init() {
+	ffmpeg::init().expect("Failed to initialise ffmpeg");
 }
 
 impl Client {
@@ -44,10 +52,12 @@ impl Client {
 		let client = unsafe { self.client.get().as_mut().unwrap() };
 		if client.is_none() {
 			*client = Some(reqwest::Client::new());
+			init();
 		}
 		client.as_ref().unwrap()
 	}
 }
+
 pub async fn set_client(client: reqwest::Client) {
 	#[allow(unused_variables)]
 	let guard = CLIENT.lock.read();
@@ -56,6 +66,7 @@ pub async fn set_client(client: reqwest::Client) {
 		panic!("reqwest client was already set")
 	}
 	*lib_client = Some(client);
+	init();
 }
 
 pub async fn get_client() -> &'static reqwest::Client {

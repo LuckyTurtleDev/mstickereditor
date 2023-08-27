@@ -1,6 +1,7 @@
 use crate::{
 	database,
-	matrix::{self, Config, Mxc}
+	matrix::{self, Config, Mxc},
+	video::webm2webp
 };
 use anyhow::anyhow;
 use flate2::write::GzDecoder;
@@ -32,6 +33,19 @@ pub struct Image {
 	pub height: u32
 }
 
+fn rayon_run<F, T>(callback: F) -> T
+where
+	F: FnOnce() -> T + Send,
+	T: Send,
+	for<'a> &'a mut T: Send
+{
+	let mut result: Option<T> = None;
+	rayon::scope(|s| {
+		s.spawn(|_| result = Some(callback()));
+	});
+	result.unwrap()
+}
+
 impl Image {
 	pub fn mime_type(&self) -> anyhow::Result<String> {
 		Ok(format!(
@@ -55,18 +69,6 @@ impl Image {
 	pub async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		if !self.file_name.ends_with(".tgs") {
 			return Ok(self);
-		}
-		fn rayon_run<F, T>(callback: F) -> T
-		where
-			F: FnOnce() -> T + Send,
-			T: Send,
-			for<'a> &'a mut T: Send
-		{
-			let mut result: Option<T> = None;
-			rayon::scope(|s| {
-				s.spawn(|_| result = Some(callback()));
-			});
-			result.unwrap()
 		}
 
 		tokio::task::spawn_blocking(move || {
@@ -95,6 +97,38 @@ impl Image {
 				}
 				self.width = size.width as u32;
 				self.height = size.height as u32;
+
+				Ok(self)
+			})
+		})
+		.await?
+	}
+
+	pub async fn convert_webm_if_webp(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
+		match animation_format {
+			Some(AnimationFormat::Webp) => self.convert_webm2webp().await,
+			_ => Ok(self)
+		}
+	}
+
+	/// convert `webm` video stickers to webp, ignore other formats
+	pub async fn convert_webm2webp(mut self) -> anyhow::Result<Self> {
+		if !self.file_name.ends_with(".webm") {
+			return Ok(self);
+		}
+
+		tokio::task::spawn_blocking(move || {
+			rayon_run(move || {
+				let mut tmp = tempfile::Builder::new().suffix(".webm").tempfile()?;
+				tmp.write_all(&self.data)?;
+				tmp.flush()?;
+
+				self.file_name.truncate(self.file_name.len() - 1);
+				self.file_name += "p";
+				let (webp, width, height) = webm2webp(&tmp.path())?;
+				self.data = Arc::new(webp.to_vec());
+				self.width = width;
+				self.height = height;
 
 				Ok(self)
 			})

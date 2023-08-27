@@ -6,7 +6,6 @@ use crate::{
 	matrix::{self, sticker_formats::ponies, Mxc},
 	CLIENT
 };
-use anyhow::bail;
 use derive_getters::Getters;
 use log::warn;
 use serde::Deserialize;
@@ -76,6 +75,8 @@ impl PhotoSize {
 			.download(tg_config)
 			.await?
 			.convert_tgs_if_some(advance_config.animation_format)
+			.await?
+			.convert_webm_if_webp(advance_config.animation_format)
 			.await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
@@ -129,16 +130,6 @@ impl Sticker {
 	where
 		D: crate::database::Database
 	{
-		if self.is_video {
-			#[cfg(feature = "log")]
-			info!(
-				"    skip Sticker {}:{:02} {},	is a video",
-				self.pack_name,
-				self.positon,
-				self.emoji.as_deref().unwrap_or_default()
-			);
-			bail!("sticker is video")
-		}
 		#[cfg(feature = "log")]
 		info!(
 			"download sticker {}:{:02} {}",
