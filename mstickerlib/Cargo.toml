@@ -16,6 +16,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 colored = "2.0"
 derive-getters = "0.3.0"
+ffmpeg = { package = "ffmpeg-next", version = "6.0" }
 flate2 = "1.0"
 futures-util = "0.3.25"
 generic-array = { version = "0.14" , features = ["serde"] }
@@ -36,6 +37,7 @@ tempfile = "3.2"
 tokio = { version = "1.21", features = ["fs", "parking_lot", "sync"] }
 tokio-stream = { version = "0.1", features = ["io-util"], default-features = false }
 url = "2.2"
+webp-animation = "0.8"
 
 [dev-dependencies]
 tokio = { version = "1.21", features = ["macros"] }

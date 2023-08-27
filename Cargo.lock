@@ -92,6 +92,26 @@ dependencies = [
 
 [[package]]
 name = "bindgen"
+version = "0.64.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c4243e6031260db77ede97ad86c27e501d646a27ab57b59a574f725d98ab1fb4"
+dependencies = [
+ "bitflags 1.3.2",
+ "cexpr",
+ "clang-sys",
+ "lazy_static",
+ "lazycell",
+ "peeking_take_while",
+ "proc-macro2",
+ "quote",
+ "regex",
+ "rustc-hash",
+ "shlex",
+ "syn 1.0.109",
+]
+
+[[package]]
+name = "bindgen"
 version = "0.66.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f2b84e06fc203107bfbad243f4aba2af864eb7db3b1cf46ea0a023b0b433d2a7"
@@ -421,6 +441,31 @@ name = "fastrand"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6999dc1837253364c2ebb0704ba97994bd874e8f195d665c50b7548f6ea92764"
+
+[[package]]
+name = "ffmpeg-next"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8af03c47ad26832ab3aabc4cdbf210af3d3b878783edd5a7ba044ba33aab7a60"
+dependencies = [
+ "bitflags 1.3.2",
+ "ffmpeg-sys-next",
+ "libc",
+]
+
+[[package]]
+name = "ffmpeg-sys-next"
+version = "6.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cf650f461ccf130f4eef4927affed703cc387b183bfc4a7dfee86a076c131127"
+dependencies = [
+ "bindgen 0.64.0",
+ "cc",
+ "libc",
+ "num_cpus",
+ "pkg-config",
+ "vcpkg",
+]
 
 [[package]]
 name = "flate2"
@@ -814,7 +859,7 @@ dependencies = [
  "gif",
  "rgb",
  "rlottie",
- "webp-animation",
+ "webp-animation 0.7.0",
 ]
 
 [[package]]
@@ -915,6 +960,7 @@ dependencies = [
  "async-trait",
  "colored",
  "derive-getters",
+ "ffmpeg-next",
  "flate2",
  "futures-util",
  "generic-array",
@@ -936,6 +982,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "url",
+ "webp-animation 0.8.0",
 ]
 
 [[package]]
@@ -1250,7 +1297,7 @@ version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "596a589bc1142eb480f662d2132f2188e45d09aee22fde2683465572b399fe03"
 dependencies = [
- "bindgen",
+ "bindgen 0.66.1",
  "pkg-config",
 ]
 
@@ -1821,6 +1868,16 @@ name = "webp-animation"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b84fb45f4f3836cbd6d6f45cb9d89cb015322c0e56a7363dcccfdcd79d76310e"
+dependencies = [
+ "libwebp-sys2",
+ "log",
+]
+
+[[package]]
+name = "webp-animation"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3d6999b9294c72c4c0000f5429caa2ab6f3cd7135b4d22ecfb01e779f3f9a3ed"
 dependencies = [
  "libwebp-sys2",
  "log",

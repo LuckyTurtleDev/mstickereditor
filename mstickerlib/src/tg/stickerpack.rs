@@ -47,13 +47,6 @@ impl StickerPack {
 	{
 		#[cfg(feature = "log")]
 		info!("import Telegram stickerpack {}({})", self.title, self.name);
-		#[cfg(feature = "log")]
-		if self.is_video {
-			warn!(
-				"sticker pack {} includes video stickers. Import of video stickers is not supported and will be skipped.",
-				self.name
-			);
-		}
 
 		let stickers_import_futures = self
 			.stickers
@@ -162,5 +155,11 @@ mod tests {
 	#[ignore]
 	async fn import_none() {
 		import("NSanimated", None).await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_video_pack_webp() {
+		import("pingu_animated", Some(AnimationFormat::Webp)).await;
 	}
 }
