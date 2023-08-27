@@ -800,14 +800,14 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "lottieconv"
-version = "0.2.2"
+version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8a2a1bae7cf0bdef12fa16c499d17be98d337a2265b7963107ad5f5eedf80eb"
+checksum = "34653862168a94c57f95ffd50bcbf438a2447bed579d0d0035fa742cbb5ca88c"
 dependencies = [
  "gif",
  "rgb",
  "rlottie",
- "webp-animation 0.7.0",
+ "webp-animation",
 ]
 
 [[package]]
@@ -927,7 +927,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "url",
- "webp-animation 0.8.0",
+ "webp-animation",
 ]
 
 [[package]]
@@ -1794,16 +1794,6 @@ checksum = "9b85cbef8c220a6abc02aefd892dfc0fc23afb1c6a426316ec33253a3877249b"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "webp-animation"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b84fb45f4f3836cbd6d6f45cb9d89cb015322c0e56a7363dcccfdcd79d76310e"
-dependencies = [
- "libwebp-sys2",
- "log",
 ]
 
 [[package]]
