@@ -40,7 +40,7 @@ where
 		Self {
 			animation_format: Some(AnimationFormat::Webp),
 			database: None,
-			dry_run: false //TODO
+			dry_run: false
 		}
 	}
 }

@@ -99,3 +99,69 @@ pub fn pack_url_to_name(url: &str) -> anyhow::Result<&str> {
 		anyhow!("{url:?} does not look like a Telegram StickerPack\nPack url should start with \"https://t.me/addstickers/\", \"t.me/addstickers/\" or \"tg://addstickers?set=\"")
 	})
 }
+
+#[cfg(test)]
+mod tests {
+
+	use super::{ImportConfig, StickerPack};
+	use crate::{database::DummyDatabase, image::AnimationFormat};
+	use lottieconv::Rgba;
+	use std::env;
+
+	async fn import(pack: &str, animation_format: Option<AnimationFormat>) {
+		let matrix_config = crate::matrix::Config {
+			homeserver_url: "none".to_owned(),
+			user: "none".to_owned(),
+			access_token: "none".to_owned()
+		};
+		let tg_config = crate::tg::Config {
+			bot_key: env::var("TG_BOT_KEY").expect("environment variables TG_BOT_KEY is not set")
+		};
+		let pack = StickerPack::get(pack, &tg_config).await.unwrap();
+		let import_config = ImportConfig::<DummyDatabase> {
+			animation_format,
+			database: None,
+			dry_run: true,
+			..Default::default()
+		};
+		let results = pack.import(&tg_config, &matrix_config, &import_config).await.1;
+		if !results.is_empty() {
+			panic!("{results:?}");
+		}
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_simple() {
+		import("LINE_Menhera_chan_ENG", Some(AnimationFormat::Webp)).await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_webp() {
+		import("NSanimated", Some(AnimationFormat::Webp)).await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_gif() {
+		import(
+			"NSanimated",
+			Some(AnimationFormat::Gif {
+				transparent_color: Rgba {
+					r: 0,
+					g: 0,
+					b: 0,
+					a: true
+				}
+			})
+		)
+		.await;
+	}
+
+	#[tokio::test]
+	#[ignore]
+	async fn import_none() {
+		import("NSanimated", None).await;
+	}
+}
