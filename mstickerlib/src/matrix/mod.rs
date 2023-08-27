@@ -39,9 +39,9 @@ impl Mxc {
 		unimplemented!() //TODO
 	}
 }
-impl Into<Mxc> for String {
-	fn into(self) -> Mxc {
-		Mxc { url: self, data: None }
+impl From<String> for Mxc {
+	fn from(val: String) -> Self {
+		Mxc { url: val, data: None }
 	}
 }
 
