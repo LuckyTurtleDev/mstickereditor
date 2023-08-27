@@ -7,7 +7,7 @@ use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
-use crate::matrix;
+use crate::matrix::{self, Mxc};
 
 #[derive(Serialize, Deserialize)]
 pub struct PackInfo {
@@ -51,7 +51,7 @@ impl TryFrom<crate::image::Image> for MetaData {
 pub struct Sticker {
 	pub body: String,
 	pub info: MetaData,
-	pub url: String,
+	pub url: Mxc,
 	pub usage: HashSet<Usage>
 }
 

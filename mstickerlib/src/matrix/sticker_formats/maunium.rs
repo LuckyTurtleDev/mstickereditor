@@ -1,6 +1,8 @@
 //! Stickerpacks for the [maunium stickerpicker](https://github.com/maunium/stickerpicker), which can be used at matrix clients whitch use the current sticker format, like Element and SchildiChat.
 //! The maunium stickerpicker does fully replace the default stickerpicker.
 
+use crate::matrix::Mxc;
+
 use super::ponies::MetaData;
 use monostate::MustBe;
 use serde::{Deserialize, Serialize};
@@ -24,7 +26,7 @@ pub struct TgPackRootInfo {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Sticker {
 	pub body: String,
-	pub url: String,
+	pub url: Mxc,
 	pub info: StickerInfo,
 	/// must always be "m.sticker", use `Default::default` to initialize it.
 	#[serde(default)]
@@ -38,7 +40,7 @@ pub struct Sticker {
 pub struct StickerInfo {
 	#[serde(flatten)]
 	pub image_info: MetaData,
-	pub thumbnail_url: String,
+	pub thumbnail_url: Mxc,
 	pub thumbnail_info: MetaData
 }
 
@@ -78,7 +80,7 @@ impl From<crate::matrix::sticker::Sticker> for Sticker {
 			url: value.image.url.clone(),
 			info,
 			msgtype: Default::default(),
-			id: value.image.url,
+			id: value.image.url.url().to_owned(),
 			tg_sticker: None
 		}
 	}

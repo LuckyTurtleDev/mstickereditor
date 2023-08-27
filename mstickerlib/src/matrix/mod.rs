@@ -1,13 +1,100 @@
 use crate::CLIENT;
 use anyhow::bail;
+use derive_getters::Getters;
 use reqwest::Url;
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use std::{
+	fmt::{Debug, Display},
+	ops::Deref,
+	sync::Arc
+};
 
 mod stickerpicker;
 use stickerpicker::StickerWidget;
 pub mod sticker;
 pub mod sticker_formats;
 pub mod stickerpack;
+
+/// Matrix file url.
+///
+/// Store matrix file url and provide a cache for the data of the file, to avoid unecessary reqwest
+/// Will be serialize/deserialize as normal [String], conaining only the url.
+#[derive(Clone, Getters)]
+pub struct Mxc {
+	url: String,
+	/// file data of the url, if cached
+	pub(crate) data: Option<Arc<Vec<u8>>>
+}
+impl Mxc {
+	/// create new [Mxc] from matrix url and optional assioated file data
+	pub fn new(url: String, data: Option<Arc<Vec<u8>>>) -> Self {
+		Self { url, data }
+	}
+
+	/// fetch data, if not cached
+	pub async fn fetch_data(&self) -> &Vec<u8> {
+		if let Some(data) = &self.data {
+			return data;
+		};
+		unimplemented!() //TODO
+	}
+}
+impl Into<Mxc> for String {
+	fn into(self) -> Mxc {
+		Mxc { url: self, data: None }
+	}
+}
+
+impl AsRef<String> for Mxc {
+	fn as_ref(&self) -> &String {
+		&self.url
+	}
+}
+impl Deref for Mxc {
+	type Target = String;
+
+	fn deref(&self) -> &Self::Target {
+		&self.url
+	}
+}
+impl Debug for Mxc {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		Debug::fmt(&self.url, f)
+	}
+}
+impl Display for Mxc {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		Display::fmt(&self.url, f)
+	}
+}
+impl PartialEq for Mxc {
+	fn eq(&self, other: &Self) -> bool {
+		self.url.eq(&other.url)
+	}
+}
+impl Eq for Mxc {
+	fn assert_receiver_is_total_eq(&self) {
+		self.url.assert_receiver_is_total_eq()
+	}
+}
+
+impl<'de> Deserialize<'de> for Mxc {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: Deserializer<'de>
+	{
+		let url = String::deserialize(deserializer)?;
+		Ok(Self { url, data: None })
+	}
+}
+impl Serialize for Mxc {
+	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+	where
+		S: Serializer
+	{
+		serializer.serialize_str(&self.url)
+	}
+}
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
@@ -77,7 +164,13 @@ pub async fn whoami(matrix: &Config) -> anyhow::Result<Whoami> {
 	}
 }
 
-pub(crate) async fn upload(matrix: &Config, filename: &String, data: &[u8], mimetype: &str) -> anyhow::Result<String> {
+pub(crate) async fn upload(matrix: &Config, filename: &String, data: Arc<Vec<u8>>, mimetype: &str) -> anyhow::Result<Mxc> {
+	let mut mxc = upload_ref(matrix, filename, data.as_slice(), mimetype).await?;
+	mxc.data = Some(data);
+	Ok(mxc)
+}
+
+pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], mimetype: &str) -> anyhow::Result<Mxc> {
 	let answer = CLIENT
 		.get()
 		.await
@@ -99,5 +192,5 @@ pub(crate) async fn upload(matrix: &Config, filename: &String, data: &[u8], mime
 		);
 	}
 	let content_uri: MatrixContentUri = answer.json().await?;
-	Ok(content_uri.content_uri)
+	Ok(content_uri.content_uri.into())
 }

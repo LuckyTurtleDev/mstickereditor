@@ -1,4 +1,7 @@
-use super::sticker_formats::{ponies::MetaData, *};
+use super::{
+	sticker_formats::{ponies::MetaData, *},
+	Mxc
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +20,7 @@ pub struct Sticker {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 /// Matrix Image struct, containing url and meta_data
 pub struct Image {
-	pub url: String,
+	pub url: Mxc,
 	pub meta_data: MetaData
 }
 

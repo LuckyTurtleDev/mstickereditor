@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::ImportConfig;
 use crate::{image::Image, matrix, matrix::sticker_formats::ponies, CLIENT};
 use anyhow::bail;
@@ -39,7 +41,7 @@ impl PhotoSize {
 			.await?
 			.to_vec();
 		Ok(Image {
-			data,
+			data: Arc::new(data),
 			file_name: file.file_path,
 			width: self.width,
 			height: self.height
@@ -73,22 +75,22 @@ impl PhotoSize {
 			.await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
-		let url = if advance_config.dry_run {
+		let mxc = if advance_config.dry_run {
 			#[cfg(feature = "log")]
 			{
 				warn!("upload skipped; dryrun");
 			}
-			"!!! DRY_RUN !!!".to_owned()
+			"!!! DRY_RUN !!!".to_owned().into()
 		} else {
-			let (url, has_uploded) = image.upload(matrix_config, advance_config.database).await?;
+			let (mxc, has_uploded) = image.upload(matrix_config, advance_config.database).await?;
 			#[cfg(feature = "log")]
 			if !has_uploded {
 				info!("upload skipped; file with this hash was already uploaded");
 			}
-			url
+			mxc
 		};
 		let meta_data = ponies::MetaData::try_from(image)?;
-		Ok(matrix::sticker::Image { url, meta_data })
+		Ok(matrix::sticker::Image { url: mxc, meta_data })
 	}
 }
 

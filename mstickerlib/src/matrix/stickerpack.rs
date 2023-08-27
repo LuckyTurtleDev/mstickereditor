@@ -95,7 +95,7 @@ impl StickerPack {
 			let file_path: &Path = image.file_name.as_ref();
 			fs::write(
 				Path::new(&format!("./stickers/{}", tg_stickerpack.name)).join(file_path.file_name().unwrap()),
-				&image.data
+				image.data.as_ref()
 			)
 			.await?;
 		}
@@ -216,6 +216,7 @@ impl StickerPack {
 				}
 			})
 			.collect();
+		pb.println(format!("{stickers:?}"));
 		pb.finish();
 
 		// save the stickerpack to file
