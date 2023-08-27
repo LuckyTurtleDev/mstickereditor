@@ -92,7 +92,3 @@ where
 	};
 	Ok(result)
 }
-
-pub(crate) async fn get_stickerpack(tg_config: &Config, name: &str) -> anyhow::Result<StickerPack> {
-	tg_get(tg_config, "getStickerSet", [("name", name)]).await
-}

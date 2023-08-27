@@ -32,7 +32,8 @@ pub struct TgStickerInfo {
 	pub pack_name: String,
 	pub bot_api_id: Option<String>,
 	pub client_api_id: Option<String>,
-	pub emoji: Vec<String>
+	pub emoji: Vec<String>,
+	pub index: Option<usize>
 }
 
 impl From<maunium::TgStickerInfo> for TgStickerInfo {
@@ -41,7 +42,8 @@ impl From<maunium::TgStickerInfo> for TgStickerInfo {
 			pack_name: value.pack.short_name,
 			bot_api_id: None,
 			client_api_id: Some(value.id),
-			emoji: value.emoticons
+			emoji: value.emoticons,
+			index: None
 		}
 	}
 }
