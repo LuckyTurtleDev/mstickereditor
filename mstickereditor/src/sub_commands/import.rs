@@ -1,11 +1,12 @@
 use crate::{load_config_file, DATABASE_FILE};
-use anyhow::Context;
+use anyhow::{bail, Context};
 use clap::Parser;
+use log::info;
 use mstickerlib::{
 	database::FileDatabase,
 	matrix,
-	matrix::{sticker_formats::maunium, stickerpack::StickerPack},
-	tg::pack_url_to_name
+	matrix::sticker_formats::maunium,
+	tg::{self, pack_url_to_name, ImportConfig}
 };
 use std::{path::PathBuf, process::exit};
 use tokio::fs;
@@ -48,29 +49,53 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		packs.push(name.to_owned());
 	}
 	let database = FileDatabase::new(&*DATABASE_FILE).await?;
+	let mut import_config = ImportConfig::default();
+	import_config.database = Some(&database);
+	import_config.dry_run = opt.dryrun;
+	let import_config = import_config;
 
 	for pack in packs {
-		let matrix_pack = StickerPack::import_pack(
-			&pack,
-			Some(&database),
-			&config.telegram,
-			opt.dryrun,
-			opt.save,
-			&config.matrix,
-			Some(&config.sticker)
-		)
-		.await
-		.with_context(|| format!("failed to import pack {pack}"))?;
+		let tg_pack = tg::StickerPack::get(&pack, &config.telegram)
+			.await
+			.with_context(|| format!("failed to get telegram sticker pack {pack:?}"))?;
+		let matrix_pack = tg_pack.import(&config.telegram, &config.matrix, &import_config).await;
+		let matrix_pack = match matrix_pack {
+			Ok(pack) => pack,
+			Err((matrix_pack, errors)) => {
+				if let Some((_index, error)) = errors.into_iter().next() {
+					return Err(error.context(format!("failed to import pack {pack:?}")));
+				}
+				matrix_pack
+			}
+		};
+		if matrix_pack.stickers.is_empty() {
+			bail!("imported pack {pack:?} is empty")
+		}
+		if opt.save {
+			info!("save sticker of stickerpack {} to disk", matrix_pack.title);
+			let dir = format!("./stickers/{}/", matrix_pack.tg_pack.as_ref().unwrap().name);
+			std::fs::create_dir_all(&dir).with_context(|| format!("failed to create dir {dir:?}"))?;
+			for sticker in &matrix_pack.stickers {
+				{
+					let index = sticker.tg_sticker.as_ref().unwrap().index.unwrap(); //should exist, since we have import the sticker from telegram right now
+					let extension = sticker.image.meta_data.mimetype.split('/').last().unwrap();
+					let path = format!("{dir}/{index:03}.{extension}");
+					fs::write(&path, sticker.image.url.data().as_ref().unwrap().as_ref())
+						.await
+						.with_context(|| format!("failed to save sticker to {path:?}"))?;
+				}
+			}
+		}
+		let matrix_pack: maunium::StickerPack = matrix_pack.into();
 		let path: PathBuf = format!(
 			"./{}.json",
 			matrix_pack
 				.tg_pack
 				.as_ref()
-				.map(|f| f.name.clone())
+				.map(|f| f.short_name.clone()) // this should be never None, however sure is sure
 				.unwrap_or_else(|| matrix_pack.title.to_owned())
 		)
 		.into();
-		let matrix_pack: maunium::StickerPack = matrix_pack.into();
 		fs::write(path, serde_json::to_string(&matrix_pack)?).await?;
 	}
 	Ok(())

@@ -1,5 +1,11 @@
+use std::sync::Arc;
+
 use super::ImportConfig;
-use crate::{image::Image, matrix, matrix::sticker_formats::ponies, CLIENT};
+use crate::{
+	image::Image,
+	matrix::{self, sticker_formats::ponies, Mxc},
+	CLIENT
+};
 use derive_getters::Getters;
 use log::warn;
 use serde::Deserialize;
@@ -38,7 +44,7 @@ impl PhotoSize {
 			.await?
 			.to_vec();
 		Ok(Image {
-			data,
+			data: Arc::new(data),
 			file_name: file.file_path,
 			width: self.width,
 			height: self.height
@@ -74,22 +80,22 @@ impl PhotoSize {
 			.await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
-		let url = if advance_config.dry_run {
+		let mxc = if advance_config.dry_run {
 			#[cfg(feature = "log")]
 			{
 				warn!("upload skipped; dryrun");
 			}
-			"!!! DRY_RUN !!!".to_owned()
+			Mxc::new("!!! DRY_RUN !!!".to_owned(), Some(image.data.clone())) //cloning Arc is cheap
 		} else {
-			let (url, has_uploded) = image.upload(matrix_config, advance_config.database).await?;
+			let (mxc, has_uploded) = image.upload(matrix_config, advance_config.database).await?;
 			#[cfg(feature = "log")]
 			if !has_uploded {
 				info!("upload skipped; file with this hash was already uploaded");
 			}
-			url
+			mxc
 		};
 		let meta_data = ponies::MetaData::try_from(image)?;
-		Ok(matrix::sticker::Image { url, meta_data })
+		Ok(matrix::sticker::Image { url: mxc, meta_data })
 	}
 }
 
@@ -162,28 +168,13 @@ impl Sticker {
 			)
 		};
 
-		// store file on disk if desired
-		/*
-		if save_to_disk {
-			pb.println(format!(
-				"    save sticker {:02} {}",
-				i + 1,
-				self.emoji.as_deref().unwrap_or_default()
-			));
-			let file_path: &Path = image.file_name.as_ref();
-			fs::write(
-				Path::new(&format!("./stickers/{}", selfpack.name)).join(file_path.file_name().unwrap()),
-				&image.data
-			)
-			.await?;
-		}*/
-
 		//construct Sticker Struct
 		let tg_info = matrix::sticker::TgStickerInfo {
 			bot_api_id: Some(self.image.file_id.clone()),
 			client_api_id: None,
 			emoji: self.emoji.clone().into_iter().collect(),
-			pack_name: self.pack_name.clone()
+			pack_name: self.pack_name.clone(),
+			index: Some(self.positon)
 		};
 		let sticker = matrix::sticker::Sticker {
 			body: self.emoji.clone().unwrap_or_default(),

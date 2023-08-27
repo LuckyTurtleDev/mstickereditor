@@ -1,4 +1,7 @@
-use super::sticker_formats::{ponies::MetaData, *};
+use super::{
+	sticker_formats::{ponies::MetaData, *},
+	Mxc
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -17,7 +20,7 @@ pub struct Sticker {
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 /// Matrix Image struct, containing url and meta_data
 pub struct Image {
-	pub url: String,
+	pub url: Mxc,
 	pub meta_data: MetaData
 }
 
@@ -29,7 +32,8 @@ pub struct TgStickerInfo {
 	pub pack_name: String,
 	pub bot_api_id: Option<String>,
 	pub client_api_id: Option<String>,
-	pub emoji: Vec<String>
+	pub emoji: Vec<String>,
+	pub index: Option<usize>
 }
 
 impl From<maunium::TgStickerInfo> for TgStickerInfo {
@@ -38,7 +42,8 @@ impl From<maunium::TgStickerInfo> for TgStickerInfo {
 			pack_name: value.pack.short_name,
 			bot_api_id: None,
 			client_api_id: Some(value.id),
-			emoji: value.emoticons
+			emoji: value.emoticons,
+			index: None
 		}
 	}
 }

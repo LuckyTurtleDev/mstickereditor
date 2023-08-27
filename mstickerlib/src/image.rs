@@ -1,11 +1,15 @@
-use crate::{database, matrix, matrix::Config, video::webm2webp};
+use crate::{
+	database,
+	matrix::{self, Config, Mxc},
+	video::webm2webp
+};
 use anyhow::anyhow;
 use flate2::write::GzDecoder;
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
 use rayon;
 use serde::Deserialize;
-use std::{io::Write, path::Path};
+use std::{io::Write, path::Path, sync::Arc};
 use strum_macros::Display;
 use tempfile::NamedTempFile;
 use tokio;
@@ -24,7 +28,7 @@ pub enum AnimationFormat {
 /// Generic image struct, containing the image data and its meta data.
 pub struct Image {
 	pub file_name: String,
-	pub data: Vec<u8>,
+	pub data: Arc<Vec<u8>>,
 	pub width: u32,
 	pub height: u32
 }
@@ -77,16 +81,17 @@ impl Image {
 				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
 
 				let size = animation.size();
-				self.data.clear();
 				self.file_name.truncate(self.file_name.len() - 3);
 				let converter = Converter::new(animation);
 				match animation_format {
 					AnimationFormat::Gif { transparent_color } => {
-						converter.gif(transparent_color, &mut self.data)?.convert()?;
+						let mut data = Vec::new();
+						converter.gif(transparent_color, &mut data)?.convert()?;
+						self.data = Arc::new(data);
 						self.file_name += "gif";
 					},
 					AnimationFormat::Webp => {
-						self.data = converter.webp()?.convert()?.to_vec();
+						self.data = Arc::new(converter.webp()?.convert()?.to_vec());
 						self.file_name += "webp";
 					}
 				}
@@ -133,7 +138,7 @@ impl Image {
 
 	///upload image to matrix
 	/// return mxc_url and true if image was uploaded now; false if it was already uploaded before and exist at the database
-	pub async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(String, bool)>
+	pub async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(Mxc, bool)>
 	where
 		D: database::Database
 	{
@@ -142,14 +147,14 @@ impl Image {
 		// if database is some and datbase.unwrap().get() is also some
 		if let Some(db) = database {
 			if let Some(url) = db.get(&hash).await {
-				return Ok((url, false));
+				return Ok((url.into(), false));
 			}
 		}
 
-		let url = matrix::upload(matrix_config, &self.file_name, &self.data, &self.mime_type()?).await?;
+		let mxc = matrix::upload(matrix_config, &self.file_name, self.data.clone(), &self.mime_type()?).await?;
 		if let Some(db) = database {
-			db.add(*hash, url.clone()).await?;
+			db.add(*hash, mxc.url().to_owned()).await?;
 		}
-		Ok((url, true))
+		Ok((mxc, true))
 	}
 }
