@@ -33,17 +33,15 @@ impl StickerPack {
 
 	/// Import this pack to matrix.
 	///
-	/// This function can partially fail, where some sticker cannot be imported.
-	/// Because of this, the postion of failed stickers and the error, which has occurred,
-	/// will is also returned.
-	///
-	/// It should be checked if the stickerpack is empty.
+	/// This function can partially fail, when the import of some stickers has failed (for example sticker use webm format, or reqwest has failed).
+	/// Because of this, the result error type inculde the successful part of the Stickerpack
+	/// and a tupple with the postion of failed stickers and the associated error.
 	pub async fn import<'a, D>(
 		self,
 		tg_config: &Config,
 		matrix_config: &matrix::Config,
 		advance_config: &ImportConfig<'a, D>
-	) -> (matrix::stickerpack::StickerPack, Vec<(usize, anyhow::Error)>)
+	) -> Result<matrix::stickerpack::StickerPack, (matrix::stickerpack::StickerPack, Vec<(usize, anyhow::Error)>)>
 	where
 		D: Database
 	{
@@ -82,7 +80,11 @@ impl StickerPack {
 		if stickerpack.stickers.is_empty() {
 			warn!("imported pack {} is empty", self.name);
 		}
-		(stickerpack, err_stickers)
+		if err_stickers.is_empty() {
+			Ok(stickerpack)
+		} else {
+			Err((stickerpack, err_stickers))
+		}
 	}
 }
 
@@ -124,10 +126,7 @@ mod tests {
 			dry_run: true,
 			..Default::default()
 		};
-		let results = pack.import(&tg_config, &matrix_config, &import_config).await.1;
-		if !results.is_empty() {
-			panic!("{results:?}");
-		}
+		pack.import(&tg_config, &matrix_config, &import_config).await.unwrap();
 	}
 
 	#[tokio::test]
