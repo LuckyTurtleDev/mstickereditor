@@ -21,6 +21,7 @@ jobs:
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
       - uses: msrd0/install-rlottie-action@v1
+      - run: apt-get update -y && apt-get install -y libavc1394-dev libavdevice-dev
       - run: cargo test --workspace --all-features --release -- --include-ignored
         env:
           RUST_BACKTRACE: 1
