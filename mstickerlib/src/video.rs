@@ -34,6 +34,9 @@ pub(crate) fn webm2webp<P: AsRef<Path>>(file: &P) -> anyhow::Result<(WebPData, u
 
 	let mut encoder = Encoder::new((decoder.width(), decoder.height()))?;
 	let mut timestamp = 0;
+	let frame_rate = input.rate();
+	let time_per_frame = frame_rate.1 * 100 / frame_rate.0;
+	eprintln!("frame_rate={frame_rate}, time_per_frame={time_per_frame}");
 	let mut receive_and_process_decoded_frames = |decoder: &mut decoder::Video| -> anyhow::Result<()> {
 		let mut decoded = Video::empty();
 		while decoder.receive_frame(&mut decoded).is_ok() {
@@ -41,7 +44,7 @@ pub(crate) fn webm2webp<P: AsRef<Path>>(file: &P) -> anyhow::Result<(WebPData, u
 			scaler.run(&decoded, &mut rgba_frame)?;
 
 			encoder.add_frame(rgba_frame.data(0), timestamp)?;
-			timestamp = decoded.timestamp().expect("Unknown timestamp") as _;
+			timestamp += time_per_frame;
 		}
 		Ok(())
 	};
