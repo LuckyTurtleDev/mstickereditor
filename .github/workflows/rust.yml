@@ -6,6 +6,9 @@ on:
   release:
     types: [released]
 
+env:
+  PACKAGES: libavc1394-dev libavdevice-dev
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -21,7 +24,7 @@ jobs:
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
       - uses: msrd0/install-rlottie-action@v1
-      - run: sudo apt-get update -y && sudo apt-get install -y libavc1394-dev libavdevice-dev
+      - run: sudo apt-get update -y && sudo apt-get install -y $PACKAGES
       - run: cargo test --workspace --all-features --release -- --include-ignored
         env:
           RUST_BACKTRACE: 1
@@ -44,6 +47,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: dtolnay/rust-toolchain@stable
       - uses: msrd0/install-rlottie-action@v1
+      - run: sudo apt-get update -y && sudo apt-get install -y $PACKAGES
       - uses: msrd0/cargo-publish-action@v1
         with: 
           packages: mstickerlib mstickereditor
