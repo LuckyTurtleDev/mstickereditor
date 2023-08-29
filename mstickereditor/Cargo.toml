@@ -27,6 +27,7 @@ tempfile = "3.2"
 toml = { package = "basic-toml", version = "0.1" }
 url = "2.2"
 log = "0.4.20"
+my-env-logger-style = { version = "0.1.0", default-features = false }
 
 [features]
 default = ["bin"]

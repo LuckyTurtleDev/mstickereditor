@@ -67,9 +67,9 @@ impl PhotoSize {
 		#[cfg(feature = "log")]
 		let emoji = emoji.unwrap_or_default();
 		#[cfg(feature = "log")]
-		let thumb = if thumb { " thumbnail" } else { "" };
+		let thumb = if thumb { "(Thumbnail)" } else { "" };
 		#[cfg(feature = "log")]
-		info!("download sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
+		info!("download sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		// download and convert sticker from telegram
 		let image = self
 			.download(tg_config)
@@ -79,18 +79,18 @@ impl PhotoSize {
 			.convert_webm_if_webp(advance_config.animation_format)
 			.await?;
 		#[cfg(feature = "log")]
-		info!("  upload sticker{thumb:<10} {pack_name}:{positon:02} {emoji}");
+		info!("  upload sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		let mxc = if advance_config.dry_run {
 			#[cfg(feature = "log")]
 			{
-				warn!("upload skipped; dryrun");
+				warn!("  upload skipped; dryrun");
 			}
 			Mxc::new("!!! DRY_RUN !!!".to_owned(), Some(image.data.clone())) //cloning Arc is cheap
 		} else {
 			let (mxc, has_uploded) = image.upload(matrix_config, advance_config.database).await?;
 			#[cfg(feature = "log")]
 			if !has_uploded {
-				info!("upload skipped; file with this hash was already uploaded");
+				info!("  upload skipped; file with this hash was already uploaded");
 			}
 			mxc
 		};
@@ -130,14 +130,6 @@ impl Sticker {
 	where
 		D: crate::database::Database
 	{
-		#[cfg(feature = "log")]
-		info!(
-			"download sticker {}:{:02} {}",
-			self.pack_name,
-			self.positon,
-			self.emoji.as_deref().unwrap_or_default()
-		);
-
 		// download sticker from telegram
 		let image = self
 			.image
@@ -162,7 +154,7 @@ impl Sticker {
 						&self.pack_name,
 						self.positon,
 						self.emoji.as_deref(),
-						false
+						true
 					)
 					.await?
 			)
@@ -187,7 +179,7 @@ impl Sticker {
 
 		#[cfg(feature = "log")]
 		info!(
-			"  finish sticker {}:{:02} {}",
+			"  finish sticker {}:{:03} {}",
 			self.pack_name,
 			self.positon,
 			self.emoji.as_deref().unwrap_or_default()

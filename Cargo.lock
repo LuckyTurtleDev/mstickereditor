@@ -381,6 +381,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "env_logger"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "85cdab6a89accf66733ad5a1693a4dcced6aeff64602b634530dd73c1f3ee9f0"
+dependencies = [
+ "is-terminal",
+ "log",
+ "termcolor",
+]
+
+[[package]]
 name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,6 +732,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "28b29a3cd74f0f4598934efe3aeba42bae0eb4680554128851ebbecb02af14e6"
 
 [[package]]
+name = "is-terminal"
+version = "0.4.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb0889898416213fab133e1d33a0e5858a48177452750691bde3666d0fdbaf8b"
+dependencies = [
+ "hermit-abi 0.3.2",
+ "rustix",
+ "windows-sys",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -889,6 +911,7 @@ dependencies = [
  "directories",
  "log",
  "mstickerlib",
+ "my-env-logger-style",
  "once_cell",
  "rayon",
  "serde",
@@ -928,6 +951,17 @@ dependencies = [
  "tokio-stream",
  "url",
  "webp-animation",
+]
+
+[[package]]
+name = "my-env-logger-style"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d14c19e713a80f4e9f2d13d511b6279f71fe915dd56449c5249ec6f040ce2a67"
+dependencies = [
+ "env_logger",
+ "log",
+ "rustc_version",
 ]
 
 [[package]]

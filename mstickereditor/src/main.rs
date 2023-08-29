@@ -4,6 +4,7 @@
 use anyhow::Context;
 use clap::Parser;
 use directories::ProjectDirs;
+use log::error;
 use mstickerlib::{image::AnimationFormat, matrix, tg};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -66,9 +67,16 @@ enum Opt {
 }
 
 fn main() {
+	my_env_logger_style::just_log();
+	if log::max_level() <= log::LevelFilter::Info {
+		// module name at output is ugly and useless information for the most user
+		// So show it only if its needed (debugging).
+		my_env_logger_style::show_module(false);
+		my_env_logger_style::show_emoji(false);
+	}
 	let data_dir = PROJECT_DIRS.data_dir();
 	if let Err(err) = fs::create_dir_all(data_dir) {
-		eprintln!("Cannot create data dir {}: {}", data_dir.display(), err);
+		error!("Cannot create data dir {}: {}", data_dir.display(), err);
 		exit(1);
 	}
 	let result = match Opt::parse() {
