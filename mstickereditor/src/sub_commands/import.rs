@@ -55,6 +55,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let import_config = import_config;
 
 	for pack in packs {
+		info!("loading data for {pack}");
 		let tg_pack = tg::StickerPack::get(&pack, &config.telegram)
 			.await
 			.with_context(|| format!("failed to get telegram sticker pack {pack:?}"))?;
@@ -71,8 +72,9 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		if matrix_pack.stickers.is_empty() {
 			bail!("imported pack {pack:?} is empty")
 		}
+		let tg_info = matrix_pack.tg_pack.as_ref().unwrap().to_owned();
 		if opt.save {
-			info!("save sticker of stickerpack {} to disk", matrix_pack.title);
+			info!("save stickers of pack {:?}({}) to disk", tg_info.title, tg_info.name);
 			let dir = format!("./stickers/{}/", matrix_pack.tg_pack.as_ref().unwrap().name);
 			std::fs::create_dir_all(&dir).with_context(|| format!("failed to create dir {dir:?}"))?;
 			for sticker in &matrix_pack.stickers {
@@ -89,13 +91,10 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		let matrix_pack: maunium::StickerPack = matrix_pack.into();
 		let path: PathBuf = format!(
 			"./{}.json",
-			matrix_pack
-				.tg_pack
-				.as_ref()
-				.map(|f| f.short_name.clone()) // this should be never None, however sure is sure
-				.unwrap_or_else(|| matrix_pack.title.to_owned())
+			tg_info.name
 		)
 		.into();
+		info!("save stickerpack {:?}({}) to {:?}", tg_info.title, tg_info.name, path);
 		fs::write(path, serde_json::to_string(&matrix_pack)?).await?;
 	}
 	Ok(())

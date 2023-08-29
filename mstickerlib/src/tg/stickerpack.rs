@@ -46,7 +46,19 @@ impl StickerPack {
 		D: Database
 	{
 		#[cfg(feature = "log")]
-		info!("import Telegram stickerpack {}({})", self.title, self.name);
+		if log::log_enabled!(log::Level::Info) {
+			let mut output = "".to_owned();
+			if self.is_animated {
+				output += " animations";
+			}
+			if self.is_video {
+			output+= " videos";
+			}
+			if !output.is_empty() {
+				output = format!(", include:{output}");
+			}
+		info!("import Telegram stickerpack {:?}({})    {{{} Stickers{}}}", self.title, self.name, self.stickers.len(), output);
+		}
 
 		let stickers_import_futures = self
 			.stickers

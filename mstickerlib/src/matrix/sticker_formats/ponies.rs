@@ -9,13 +9,13 @@ use std::collections::HashSet;
 
 use crate::matrix::{self, Mxc};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PackInfo {
 	pub display_name: String,
 	pub avatar_url: Option<String>
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StickerPack {
 	pub images: IndexMap<String, Sticker>,
 	pub pack: PackInfo

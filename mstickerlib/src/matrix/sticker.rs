@@ -5,7 +5,7 @@ use super::{
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sticker {
 	pub body: String,
 	pub image: Image,
@@ -26,7 +26,7 @@ pub struct Image {
 
 ///info about the original telegram sticker
 ///this field should not be change manual
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TgStickerInfo {
 	///pack where the sticker is from
 	pub pack_name: String,

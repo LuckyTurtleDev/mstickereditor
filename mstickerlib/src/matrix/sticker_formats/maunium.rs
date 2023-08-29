@@ -7,7 +7,7 @@ use super::ponies::MetaData;
 use monostate::MustBe;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StickerPack {
 	pub title: String,
 	pub id: String,
@@ -17,13 +17,13 @@ pub struct StickerPack {
 }
 
 ///information about the telegram pack, which was imported
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TgPackRootInfo {
 	pub short_name: String,
 	pub hash: String
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Sticker {
 	pub body: String,
 	pub url: Mxc,
@@ -36,7 +36,7 @@ pub struct Sticker {
 	pub tg_sticker: Option<TgStickerInfo>
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StickerInfo {
 	#[serde(flatten)]
 	pub image_info: MetaData,
@@ -46,7 +46,7 @@ pub struct StickerInfo {
 
 ///additonal informations about the original telegram sticker
 ///stored at stickers->net.maunium.telegram.sticker
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TgStickerInfo {
 	pub pack: TgPackInfo,
 	pub id: String,
@@ -55,7 +55,7 @@ pub struct TgStickerInfo {
 
 ///additonal informations about the original telegram stickerpack in witch the sticker was inculded
 ///stored at stickers->net.maunium.telegram.sticker->pack
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TgPackInfo {
 	pub id: String,
 	pub short_name: String

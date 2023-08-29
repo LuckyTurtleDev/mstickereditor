@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 ///additonal informations about the original telegram sticker pack
 ///stored at `net.maunium.telegram.pack`
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TgPackInfo {
 	pub name: String,
 	pub title: String
@@ -17,7 +17,7 @@ impl From<&crate::tg::StickerPack> for TgPackInfo {
 	}
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StickerPack {
 	pub title: String,
 	///unique id
