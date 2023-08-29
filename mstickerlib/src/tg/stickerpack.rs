@@ -37,7 +37,7 @@ impl StickerPack {
 	/// Because of this, the result error type inculde the successful part of the Stickerpack
 	/// and a tupple with the postion of failed stickers and the associated error.
 	pub async fn import<'a, D>(
-		self,
+		&self,
 		tg_config: &Config,
 		matrix_config: &matrix::Config,
 		advance_config: &ImportConfig<'a, D>
@@ -52,12 +52,18 @@ impl StickerPack {
 				output += " animations";
 			}
 			if self.is_video {
-			output+= " videos";
+				output += " videos";
 			}
 			if !output.is_empty() {
 				output = format!(", include:{output}");
 			}
-		info!("import Telegram stickerpack {:?}({})    {{{} Stickers{}}}", self.title, self.name, self.stickers.len(), output);
+			info!(
+				"import Telegram stickerpack {:?}({})    {{{} Stickers{}}}",
+				self.title,
+				self.name,
+				self.stickers.len(),
+				output
+			);
 		}
 
 		let stickers_import_futures = self
@@ -78,7 +84,7 @@ impl StickerPack {
 		let stickerpack = matrix::stickerpack::StickerPack {
 			title: self.title.clone(),
 			id: format!("tg_name_{}", self.name),
-			tg_pack: Some((&self).into()),
+			tg_pack: Some((&self).to_owned().into()),
 			stickers: ok_stickers
 		};
 		#[cfg(feature = "log")]
@@ -173,5 +179,14 @@ mod tests {
 	#[ignore]
 	async fn import_video_pack_webp() {
 		import("pingu_animated", Some(AnimationFormat::Webp)).await;
+	}
+
+	//#[tokio::test]
+	#[ignore]
+	async fn import_video_pack_webp_invalid_buffer_size() {
+		// test invalid buffer size:
+		// BufferSizeFailed: Expected (width * height * 4 = 708608) bytes as input buffer, got 720896 bytes
+		// see https://github.com/LuckyTurtleDev/mstickereditor/issues/34
+		import("LANI_Kurumi_chan_2_ENG", Some(AnimationFormat::Webp)).await;
 	}
 }

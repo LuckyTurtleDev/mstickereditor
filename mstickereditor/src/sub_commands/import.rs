@@ -1,7 +1,7 @@
 use crate::{load_config_file, DATABASE_FILE};
 use anyhow::{bail, Context};
 use clap::Parser;
-use log::info;
+use log::{error, info, warn};
 use mstickerlib::{
 	database::FileDatabase,
 	matrix,
@@ -63,18 +63,19 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		let matrix_pack = match matrix_pack {
 			Ok(pack) => pack,
 			Err((matrix_pack, errors)) => {
-				if let Some((_index, error)) = errors.into_iter().next() {
-					return Err(error.context(format!("failed to import pack {pack:?}")));
+				for (index, err) in errors {
+					let err = err.context(format!("failed to import sticker {index} from pack {pack:?}"));
+					error!("{err:?}");
 				}
+				warn!("Sticker pack {} will not be complete", tg_pack.name());
 				matrix_pack
 			}
 		};
 		if matrix_pack.stickers.is_empty() {
 			bail!("imported pack {pack:?} is empty")
 		}
-		let tg_info = matrix_pack.tg_pack.as_ref().unwrap().to_owned();
 		if opt.save {
-			info!("save stickers of pack {:?}({}) to disk", tg_info.title, tg_info.name);
+			info!("save stickers of pack {} to disk", tg_pack.name());
 			let dir = format!("./stickers/{}/", matrix_pack.tg_pack.as_ref().unwrap().name);
 			std::fs::create_dir_all(&dir).with_context(|| format!("failed to create dir {dir:?}"))?;
 			for sticker in &matrix_pack.stickers {
@@ -89,12 +90,8 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			}
 		}
 		let matrix_pack: maunium::StickerPack = matrix_pack.into();
-		let path: PathBuf = format!(
-			"./{}.json",
-			tg_info.name
-		)
-		.into();
-		info!("save stickerpack {:?}({}) to {:?}", tg_info.title, tg_info.name, path);
+		let path: PathBuf = format!("./{}.json", tg_pack.name()).into();
+		info!("save stickerpack to {:?}", path);
 		fs::write(path, serde_json::to_string(&matrix_pack)?).await?;
 	}
 	Ok(())
