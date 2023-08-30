@@ -8,7 +8,7 @@
 Import sticker packs from telegram, to be used at the [Maunium sticker picker](https://github.com/maunium/stickerpicker) for Matrix
 
 ## Features:
-* import Stickerpacks from Telegram (including animated Stickerspacks; video stickers are currently not supported)
+* import Stickerpacks from Telegram (including animated and video stickers)
 * enable Stickerpicker widget for supported Matrix Clients
 
 ## Client Support for Animated Sticker:
@@ -45,6 +45,7 @@ if the background of the client does not match the `transparent_color`.
 #### Dependencies:
 * [libwebp](https://chromium.googlesource.com/webm/libwebp)
 * [rlottie v0.2](https://github.com/Samsung/rlottie/tree/v0.2)
+* [ffmpeg](https://ffmpeg.org/)
 * [cargo](https://www.rust-lang.org) (make)
 * [clang](https://lld.llvm.org/) (make)
 * [ldd](https://clang.llvm.org/) (make)
@@ -84,6 +85,7 @@ Currently, there are no prebuild binaries available. So users of other platforms
  Install the following packages. (I recommand to use the package managment system of your operating system):
 * [libwebp](https://chromium.googlesource.com/webm/libwebp)
 * [rlottie v0.2](https://github.com/Samsung/rlottie/tree/v0.2)
+* [ffmpeg](https://ffmpeg.org/)
 * [rust](https://www.rust-lang.org/tools/install)
 * [clang](https://lld.llvm.org/)
 * [ldd](https://clang.llvm.org/)
