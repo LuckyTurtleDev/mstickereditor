@@ -178,12 +178,14 @@ mod tests {
 		import("NSanimated", None).await;
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	#[tokio::test]
 	#[ignore]
 	async fn import_video_pack_webp() {
 		import("pingu_animated", Some(AnimationFormat::Webp)).await;
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	//#[tokio::test]
 	#[ignore]
 	async fn import_video_pack_webp_invalid_buffer_size() {

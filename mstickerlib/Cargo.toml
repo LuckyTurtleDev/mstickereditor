@@ -43,7 +43,7 @@ tokio = { version = "1.21", features = ["macros"] }
 rustc_version = "0.4.0"
 
 [features]
-#default = ["ffmpeg", "log", "lottie"]
+default = ["ffmpeg", "log", "lottie"]
 ffmpeg = ["dep:ffmpeg", "dep:tempfile", "dep:webp-animation"]
 log = ["dep:log"]
 lottie = ["dep:flate2", "dep:lottieconv", "dep:tempfile", "dep:webp-animation"]
