@@ -26,7 +26,7 @@ jobs:
       - uses: msrd0/install-rlottie-action@v1
       - run: sudo apt-get update -y && sudo apt-get install -y $PACKAGES
       - name: install cargo-all-features
-        uses: baptiste0928/cargo-install@v1.3.0
+        uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-all-features
       - run: cargo test-all-features --release -- --include-ignored
