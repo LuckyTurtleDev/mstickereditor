@@ -70,13 +70,10 @@ impl PhotoSize {
 		#[cfg(feature = "log")]
 		info!("download sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		// download and convert sticker from telegram
-		let image = self
-			.download(tg_config)
-			.await?
-			.convert_tgs_if_some(advance_config.animation_format)
-			.await?
-			.convert_webm_if_webp(advance_config.animation_format)
-			.await?;
+		let image = self.download(tg_config).await?;
+		#[cfg(feature = "lottie")]
+		let image = image.convert_tgs_if_some(advance_config.animation_format).await?;
+		let image = image.convert_webm_if_webp(advance_config.animation_format).await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		let mxc = if advance_config.dry_run {

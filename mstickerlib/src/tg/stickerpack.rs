@@ -118,6 +118,7 @@ mod tests {
 
 	use super::{ImportConfig, StickerPack};
 	use crate::{database::DummyDatabase, image::AnimationFormat};
+	#[cfg(feature = "lottie")]
 	use lottieconv::Rgba;
 	use std::env;
 
@@ -146,12 +147,14 @@ mod tests {
 		import("LINE_Menhera_chan_ENG", Some(AnimationFormat::Webp)).await;
 	}
 
+	#[cfg(feature = "lottie")]
 	#[tokio::test]
 	#[ignore]
 	async fn import_webp() {
 		import("NSanimated", Some(AnimationFormat::Webp)).await;
 	}
 
+	#[cfg(feature = "lottie")]
 	#[tokio::test]
 	#[ignore]
 	async fn import_gif() {
