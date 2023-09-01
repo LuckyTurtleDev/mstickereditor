@@ -73,6 +73,7 @@ impl PhotoSize {
 		let image = self.download(tg_config).await?;
 		#[cfg(feature = "lottie")]
 		let image = image.convert_tgs_if_some(advance_config.animation_format).await?;
+		#[cfg(feature = "ffmpeg")]
 		let image = image.convert_webm_if_webp(advance_config.animation_format).await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");

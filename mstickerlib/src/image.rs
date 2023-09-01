@@ -1,7 +1,8 @@
+#[cfg(feature = "ffmpeg")]
+use crate::video::webm2webp;
 use crate::{
 	database,
-	matrix::{self, Config, Mxc},
-	video::webm2webp
+	matrix::{self, Config, Mxc}
 };
 #[cfg(feature = "lottie")]
 use anyhow::anyhow;
@@ -109,6 +110,7 @@ impl Image {
 		.await?
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	pub async fn convert_webm_if_webp(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
 		match animation_format {
 			Some(AnimationFormat::Webp) => self.convert_webm2webp().await,
@@ -116,6 +118,7 @@ impl Image {
 		}
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	/// convert `webm` video stickers to webp, ignore other formats
 	pub async fn convert_webm2webp(mut self) -> anyhow::Result<Self> {
 		if !self.file_name.ends_with(".webm") {
