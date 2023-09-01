@@ -7,11 +7,10 @@ use crate::{
 	CLIENT
 };
 use derive_getters::Getters;
-use log::warn;
 use serde::Deserialize;
 
 #[cfg(feature = "log")]
-use log::info;
+use log::{info, warn};
 
 ///see <https://core.telegram.org/bots/api#photosize>
 #[derive(Clone, Debug, Deserialize, Hash)]
