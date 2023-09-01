@@ -25,9 +25,14 @@ jobs:
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
       - uses: msrd0/install-rlottie-action@v1
       - run: sudo apt-get update -y && sudo apt-get install -y $PACKAGES
-      - run: cargo test --workspace --all-features --release -- --include-ignored
+      - name: install cargo-all-features
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-all-features
+      - run: cargo test-all-features --release -- --include-ignored
         env:
           RUST_BACKTRACE: 1
+          RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
 
   rustfmt:
