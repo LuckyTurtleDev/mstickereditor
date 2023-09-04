@@ -35,6 +35,30 @@ jobs:
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
 
+  bulid:
+    runs-on: ubuntu-latest
+#    needs: [test]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        id: "rust-toolchain"
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
+      - uses: msrd0/install-rlottie-action@v1
+      - run: sudo apt-get update -y && sudo apt-get install -y $PACKAGES
+      - name: install cargo-all-features
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-appimage
+      - run: cargo appimage
+        env:
+          RUST_BACKTRACE: 1
+
   rustfmt:
     runs-on: ubuntu-latest
     steps:
