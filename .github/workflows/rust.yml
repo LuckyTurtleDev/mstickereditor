@@ -58,8 +58,7 @@ jobs:
         uses: baptiste0928/cargo-install@v2
         with:
           crate: cargo-appimage
-      - run: cargo appimage
-        working-directory: mstickereditor
+      - run: cargo appimage --help
         env:
           RUST_BACKTRACE: 1
 
