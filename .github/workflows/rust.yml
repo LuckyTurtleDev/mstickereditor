@@ -32,6 +32,7 @@ jobs:
       - run: cargo test-all-features --release -- --include-ignored
         env:
           RUST_BACKTRACE: 1
+          CARGO_PROFILE_RELEASE_BUILD_OVERRIDE_DEBUG: true
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
 
