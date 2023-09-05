@@ -185,8 +185,9 @@ mod tests {
 		import("pingu_animated", Some(AnimationFormat::Webp)).await;
 	}
 
+	/*
 	#[cfg(feature = "ffmpeg")]
-	//#[tokio::test]
+	#[tokio::test]
 	#[ignore]
 	async fn import_video_pack_webp_invalid_buffer_size() {
 		// test invalid buffer size:
@@ -194,4 +195,5 @@ mod tests {
 		// see https://github.com/LuckyTurtleDev/mstickereditor/issues/34
 		import("LANI_Kurumi_chan_2_ENG", Some(AnimationFormat::Webp)).await;
 	}
+	*/
 }

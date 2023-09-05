@@ -11,13 +11,13 @@ use flate2::write::GzDecoder;
 #[cfg(feature = "lottie")]
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
-use rayon;
 use serde::Deserialize;
-use std::{io::Write, path::Path, sync::Arc};
+#[cfg(any(feature = "ffmpeg", feature = "lottie"))]
+use std::io::Write;
+use std::{path::Path, sync::Arc};
 use strum_macros::Display;
 #[cfg(feature = "lottie")]
 use tempfile::NamedTempFile;
-use tokio;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
 #[serde(tag = "animation_format", rename_all = "lowercase")]
@@ -37,6 +37,7 @@ pub struct Image {
 	pub height: u32
 }
 
+#[cfg(any(feature = "ffmpeg", feature = "lottie"))]
 fn rayon_run<F, T>(callback: F) -> T
 where
 	F: FnOnce() -> T + Send,
