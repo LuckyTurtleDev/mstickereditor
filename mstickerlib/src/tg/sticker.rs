@@ -63,6 +63,14 @@ impl PhotoSize {
 	where
 		D: crate::database::Database
 	{
+		#[cfg(not(feature = "log"))]
+		{
+			//disable unused param warning
+			let _ = pack_name;
+			let _ = positon;
+			let _ = thumb;
+			let _ = emoji;
+		}
 		#[cfg(feature = "log")]
 		let emoji = emoji.unwrap_or_default();
 		#[cfg(feature = "log")]
@@ -70,13 +78,11 @@ impl PhotoSize {
 		#[cfg(feature = "log")]
 		info!("download sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		// download and convert sticker from telegram
-		let image = self
-			.download(tg_config)
-			.await?
-			.convert_tgs_if_some(advance_config.animation_format)
-			.await?
-			.convert_webm_if_webp(advance_config.animation_format)
-			.await?;
+		let image = self.download(tg_config).await?;
+		#[cfg(feature = "lottie")]
+		let image = image.convert_tgs_if_some(advance_config.animation_format).await?;
+		#[cfg(feature = "ffmpeg")]
+		let image = image.convert_webm_if_webp(advance_config.animation_format).await?;
 		#[cfg(feature = "log")]
 		info!("  upload sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		let mxc = if advance_config.dry_run {
@@ -91,6 +97,8 @@ impl PhotoSize {
 			if !has_uploded {
 				info!("  upload skipped; file with this hash was already uploaded");
 			}
+			#[cfg(not(feature = "log"))]
+			let _ = has_uploded; //fix unused warning
 			mxc
 		};
 		let meta_data = ponies::MetaData::try_from(image)?;
@@ -102,11 +110,11 @@ impl PhotoSize {
 #[non_exhaustive]
 pub struct Sticker {
 	/// Emoji associated with the sticker.
-	pub(crate) emoji: Option<String>,
+	emoji: Option<String>,
 	/// Identifier for this file, which can be used to download or reuse the file.
 	#[serde(flatten)]
-	pub(crate) image: PhotoSize,
-	pub(crate) thumbnail: Option<PhotoSize>,
+	image: PhotoSize,
+	thumbnail: Option<PhotoSize>,
 	#[serde(default)] //will be initialize in super::stickerpack::StickerPack::get()
 	/// Positon in the stickerpack
 	pub(crate) positon: usize,
@@ -115,7 +123,7 @@ pub struct Sticker {
 	/// True if the sticker is [animated](https://telegram.org/blog/animated-stickers).
 	is_animated: bool,
 	/// True if the sticker is a [video sticker](https://telegram.org/blog/video-stickers-better-reactions).
-	pub(crate) is_video: bool
+	is_video: bool
 }
 
 impl Sticker {

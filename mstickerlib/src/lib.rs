@@ -8,6 +8,7 @@ pub mod database;
 pub mod image;
 pub mod matrix;
 pub mod tg;
+#[cfg(feature = "ffmpeg")]
 mod video;
 
 //mod sub_commands;
@@ -31,6 +32,7 @@ struct Client {
 // created, so we can ensure this function will be called exactly once. Also, the
 // HTTP client will always be needed before ffmpeg.
 fn init() {
+	#[cfg(feature = "ffmpeg")]
 	ffmpeg::init().expect("Failed to initialise ffmpeg");
 }
 

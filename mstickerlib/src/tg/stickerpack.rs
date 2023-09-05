@@ -118,6 +118,7 @@ mod tests {
 
 	use super::{ImportConfig, StickerPack};
 	use crate::{database::DummyDatabase, image::AnimationFormat};
+	#[cfg(feature = "lottie")]
 	use lottieconv::Rgba;
 	use std::env;
 
@@ -146,12 +147,14 @@ mod tests {
 		import("LINE_Menhera_chan_ENG", Some(AnimationFormat::Webp)).await;
 	}
 
+	#[cfg(feature = "lottie")]
 	#[tokio::test]
 	#[ignore]
 	async fn import_webp() {
 		import("NSanimated", Some(AnimationFormat::Webp)).await;
 	}
 
+	#[cfg(feature = "lottie")]
 	#[tokio::test]
 	#[ignore]
 	async fn import_gif() {
@@ -175,13 +178,16 @@ mod tests {
 		import("NSanimated", None).await;
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	#[tokio::test]
 	#[ignore]
 	async fn import_video_pack_webp() {
 		import("pingu_animated", Some(AnimationFormat::Webp)).await;
 	}
 
-	//#[tokio::test]
+	/*
+	#[cfg(feature = "ffmpeg")]
+	#[tokio::test]
 	#[ignore]
 	async fn import_video_pack_webp_invalid_buffer_size() {
 		// test invalid buffer size:
@@ -189,4 +195,5 @@ mod tests {
 		// see https://github.com/LuckyTurtleDev/mstickereditor/issues/34
 		import("LANI_Kurumi_chan_2_ENG", Some(AnimationFormat::Webp)).await;
 	}
+	*/
 }

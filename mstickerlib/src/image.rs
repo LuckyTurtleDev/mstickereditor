@@ -1,25 +1,29 @@
+#[cfg(feature = "ffmpeg")]
+use crate::video::webm2webp;
 use crate::{
 	database,
-	matrix::{self, Config, Mxc},
-	video::webm2webp
+	matrix::{self, Config, Mxc}
 };
+#[cfg(feature = "lottie")]
 use anyhow::anyhow;
+#[cfg(feature = "lottie")]
 use flate2::write::GzDecoder;
+#[cfg(feature = "lottie")]
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
-use rayon;
 use serde::Deserialize;
-use std::{io::Write, path::Path, sync::Arc};
+#[cfg(any(feature = "ffmpeg", feature = "lottie"))]
+use std::io::Write;
+use std::{path::Path, sync::Arc};
 use strum_macros::Display;
+#[cfg(feature = "lottie")]
 use tempfile::NamedTempFile;
-use tokio;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
 #[serde(tag = "animation_format", rename_all = "lowercase")]
 pub enum AnimationFormat {
-	Gif {
-		transparent_color: Rgba
-	},
+	#[cfg(feature = "lottie")]
+	Gif { transparent_color: Rgba },
 
 	#[default]
 	Webp
@@ -33,6 +37,7 @@ pub struct Image {
 	pub height: u32
 }
 
+#[cfg(any(feature = "ffmpeg", feature = "lottie"))]
 fn rayon_run<F, T>(callback: F) -> T
 where
 	F: FnOnce() -> T + Send,
@@ -58,6 +63,7 @@ impl Image {
 		))
 	}
 
+	#[cfg(feature = "lottie")]
 	pub async fn convert_tgs_if_some(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
 		match animation_format {
 			None => Ok(self),
@@ -66,6 +72,7 @@ impl Image {
 	}
 
 	/// convert `tgs` image to webp or gif, ignore other formats
+	#[cfg(feature = "lottie")]
 	pub async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
 		if !self.file_name.ends_with(".tgs") {
 			return Ok(self);
@@ -104,6 +111,7 @@ impl Image {
 		.await?
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	pub async fn convert_webm_if_webp(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
 		match animation_format {
 			Some(AnimationFormat::Webp) => self.convert_webm2webp().await,
@@ -111,6 +119,7 @@ impl Image {
 		}
 	}
 
+	#[cfg(feature = "ffmpeg")]
 	/// convert `webm` video stickers to webp, ignore other formats
 	pub async fn convert_webm2webp(mut self) -> anyhow::Result<Self> {
 		if !self.file_name.ends_with(".webm") {
