@@ -17,7 +17,7 @@ clap = { version = "3.0", features = ["derive"] }
 clap_complete = "3.0"
 directories = "4.0"
 log = "0.4.20"
-mstickerlib = { version = "0.1.0", path= "../mstickerlib"}
+mstickerlib = { version = "0.1.0", path= "../mstickerlib" , features = ["log"], default-features = false }
 my-env-logger-style = { version = "0.1.0", default-features = false }
 once_cell = "1.8"
 rayon = "1.5"
@@ -30,9 +30,9 @@ toml = { package = "basic-toml", version = "0.1" }
 url = "2.2"
 
 [features]
-default = ["bin"]
-# unused, can be removed (breaking change)
-bin = []
+default = ["ffmpeg", "lottie"]
+ffmpeg = ["mstickerlib/ffmpeg"]
+lottie = ["mstickerlib/lottie"]
 
 [profile.release]
 lto = true
