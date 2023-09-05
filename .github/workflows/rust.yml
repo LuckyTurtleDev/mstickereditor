@@ -10,7 +10,7 @@ env:
   PACKAGES: libavc1394-dev libavdevice-dev
 
 jobs:
-  test:
+  test-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -34,7 +34,46 @@ jobs:
           RUST_BACKTRACE: 1
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
-
+          
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows, macos]
+    name: "${{ matrix.os }}-test"
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        id: "rust-toolchain"
+      - name: install ffmpeg (macos)
+        run: brew install ffmpeg
+        if:  ${{ matrix.os == 'macos' }}
+      - name: Install win dependencies
+        # source https://github.com/zmwangx/rust-ffmpeg/blob/master/.github/workflows/build.yml
+        run: |
+          $VCINSTALLDIR = $(& "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath)
+          Add-Content $env:GITHUB_ENV "LIBCLANG_PATH=${VCINSTALLDIR}\VC\Tools\LLVM\x64\bin`n"
+          Invoke-WebRequest "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full-shared.7z" -OutFile ffmpeg-release-full-shared.7z
+          7z x ffmpeg-release-full-shared.7z
+          mkdir ffmpeg
+          mv ffmpeg-*/* ffmpeg/
+          Add-Content $env:GITHUB_ENV "FFMPEG_DIR=${pwd}\ffmpeg`n"
+          Add-Content $env:GITHUB_PATH "${pwd}\ffmpeg\bin`n"
+        if:  ${{ matrix.os == 'windows' }}
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
+      - run: cargo test --no-default-features --features ffmpeg,log -- --include-ignored
+        env:
+          RUST_BACKTRACE: 1
+          RUST_TEST_THREADS: 1
+          TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
+          
   rustfmt:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +85,7 @@ jobs:
 
   cargo_publish:
     if: ${{ github.event_name == 'release' }}
-    needs: [test]
+    needs: [test-linux, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
