@@ -10,7 +10,7 @@ env:
   PACKAGES: libavc1394-dev libavdevice-dev
 
 jobs:
-  test:
+  test-linux:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -34,7 +34,30 @@ jobs:
           RUST_BACKTRACE: 1
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
-
+          
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows, macos]
+    name: "${{ matrix.os }}-test"
+    runs-on: ${{ matrix.os }}-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@stable
+        id: "rust-toolchain"
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/git
+            ~/.cargo/registry
+            target
+          key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
+      - run: cargo test --no-default-features -- --include-ignored
+        env:
+          RUST_BACKTRACE: 1
+          TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
+          
   rustfmt:
     runs-on: ubuntu-latest
     steps:
@@ -46,7 +69,7 @@ jobs:
 
   cargo_publish:
     if: ${{ github.event_name == 'release' }}
-    needs: [test]
+    needs: [test-linux, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
