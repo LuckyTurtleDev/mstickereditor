@@ -79,8 +79,9 @@ impl PhotoSize {
 		info!("download sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		// download and convert sticker from telegram
 		let image = self.download(tg_config).await?;
+		let image = image.unpack_tgs().await?;
 		#[cfg(feature = "lottie")]
-		let image = image.convert_tgs_if_some(advance_config.animation_format).await?;
+		let image = image.convert_lottie_if_some(advance_config.animation_format).await?;
 		#[cfg(feature = "ffmpeg")]
 		let image = image.convert_webm_if_webp(advance_config.animation_format).await?;
 		#[cfg(feature = "log")]

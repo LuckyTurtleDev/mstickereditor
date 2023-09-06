@@ -7,14 +7,12 @@ use crate::{
 #[cfg(feature = "lottie")]
 use anyhow::anyhow;
 #[cfg(feature = "lottie")]
-use flate2::write::GzDecoder;
-#[cfg(feature = "lottie")]
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 #[cfg(any(feature = "ffmpeg", feature = "lottie"))]
 use std::io::Write;
-use std::{path::Path, sync::Arc};
+use std::{io::Read, path::Path, sync::Arc};
 use strum_macros::Display;
 #[cfg(feature = "lottie")]
 use tempfile::NamedTempFile;
@@ -37,7 +35,6 @@ pub struct Image {
 	pub height: u32
 }
 
-#[cfg(any(feature = "ffmpeg", feature = "lottie"))]
 fn rayon_run<F, T>(callback: F) -> T
 where
 	F: FnOnce() -> T + Send,
@@ -63,56 +60,72 @@ impl Image {
 		))
 	}
 
-	#[cfg(feature = "lottie")]
-	pub async fn convert_tgs_if_some(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
-		match animation_format {
-			None => Ok(self),
-			Some(animation_format) => self.convert_tgs(animation_format).await
-		}
-	}
-
-	/// convert `tgs` image to webp or gif, ignore other formats
-	#[cfg(feature = "lottie")]
-	pub async fn convert_tgs(mut self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+	/// unpack gzip compression `tgs`, converting it to `lottie`, ignore other formats
+	pub async fn unpack_tgs(mut self) -> anyhow::Result<Self> {
 		if !self.file_name.ends_with(".tgs") {
 			return Ok(self);
 		}
-
 		tokio::task::spawn_blocking(move || {
 			rayon_run(move || {
-				//save to image to file
-				let mut tmp = NamedTempFile::new()?;
-				GzDecoder::new(&mut tmp).write_all(&self.data)?;
-				tmp.flush()?;
-
-				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
-
-				let size = animation.size();
+				let mut output = Vec::new();
+				let input_reader = &**self.data;
+				flate2::read::GzDecoder::new(input_reader).read_to_end(&mut output)?;
+				self.data = Arc::new(output);
 				self.file_name.truncate(self.file_name.len() - 3);
-				let converter = Converter::new(animation);
-				match animation_format {
-					AnimationFormat::Gif { transparent_color } => {
-						let mut data = Vec::new();
-						converter.gif(transparent_color, &mut data)?.convert()?;
-						self.data = Arc::new(data);
-						self.file_name += "gif";
-					},
-					AnimationFormat::Webp => {
-						self.data = Arc::new(converter.webp()?.convert()?.to_vec());
-						self.file_name += "webp";
-					}
-				}
-				self.width = size.width as u32;
-				self.height = size.height as u32;
-
+				self.file_name += "lottie";
 				Ok(self)
 			})
 		})
 		.await?
 	}
 
+	#[cfg(feature = "lottie")]
+	pub(crate) async fn convert_lottie_if_some(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
+		match animation_format {
+			None => Ok(self),
+			Some(animation_format) => self.convert_lottie(animation_format).await
+		}
+	}
+
+	/// convert `tgs` image to webp or gif, ignore other formats
+	#[cfg(feature = "lottie")]
+	pub async fn convert_lottie(self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+		if !self.file_name.ends_with(".lottie") {
+			return Ok(self);
+		}
+		let mut image = self.unpack_tgs().await?;
+		tokio::task::spawn_blocking(move || {
+			rayon_run(move || {
+				//save to image to file
+				let mut tmp = NamedTempFile::new()?;
+				tmp.write_all(&image.data)?;
+				tmp.flush()?;
+				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+				let size = animation.size();
+				image.file_name.truncate(image.file_name.len() - 6);
+				let converter = Converter::new(animation);
+				match animation_format {
+					AnimationFormat::Gif { transparent_color } => {
+						let mut data = Vec::new();
+						converter.gif(transparent_color, &mut data)?.convert()?;
+						image.data = Arc::new(data);
+						image.file_name += "gif";
+					},
+					AnimationFormat::Webp => {
+						image.data = Arc::new(converter.webp()?.convert()?.to_vec());
+						image.file_name += "webp";
+					}
+				}
+				image.width = size.width as u32;
+				image.height = size.height as u32;
+				Ok(image)
+			})
+		})
+		.await?
+	}
+
 	#[cfg(feature = "ffmpeg")]
-	pub async fn convert_webm_if_webp(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
+	pub(crate) async fn convert_webm_if_webp(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
 		match animation_format {
 			Some(AnimationFormat::Webp) => self.convert_webm2webp().await,
 			_ => Ok(self)
