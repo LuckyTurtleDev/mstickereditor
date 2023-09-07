@@ -132,13 +132,30 @@ mod tests {
 			bot_key: env::var("TG_BOT_KEY").expect("environment variables TG_BOT_KEY is not set")
 		};
 		let pack = StickerPack::get(pack, &tg_config).await.unwrap();
-		let import_config = ImportConfig::<DummyDatabase> {
-			animation_format,
+		let mut import_config = ImportConfig::<DummyDatabase> {
 			database: None,
 			dry_run: true,
 			..Default::default()
 		};
-		pack.import(&tg_config, &matrix_config, &import_config).await.unwrap();
+		if let Some(animation_format) = animation_format {
+			import_config.animation_format = animation_format;
+		} else {
+			import_config.keep_webm = true;
+			import_config.keep_lottie = true;
+		}
+		let pack = pack.import(&tg_config, &matrix_config, &import_config).await.unwrap();
+		for sticker in pack.stickers {
+			let mimetype = sticker.image.meta_data.mimetype;
+			if let Some(animation_format) = animation_format {
+				match animation_format {
+					#[cfg(feature = "lottie")]
+					AnimationFormat::Gif { .. } => assert_eq!(mimetype, "image/gif"),
+					AnimationFormat::Webp => assert_eq!(mimetype, "image/webp")
+				}
+			} else {
+				assert!(mimetype == "image/lottie" || mimetype == "video/webm");
+			}
+		}
 	}
 
 	#[tokio::test]
@@ -174,7 +191,7 @@ mod tests {
 
 	#[tokio::test]
 	#[ignore]
-	async fn import_none() {
+	async fn import_lottie() {
 		import("NSanimated", None).await;
 	}
 

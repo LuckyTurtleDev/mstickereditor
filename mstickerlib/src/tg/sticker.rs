@@ -86,7 +86,7 @@ impl PhotoSize {
 			// But `convert_...` function does not exist, if feature is dissable.
 			#[cfg(feature = "lottie")]
 			{
-				image = image.convert_lottie_if_some(advance_config.animation_format).await?;
+				image = image.convert_lottie(advance_config.animation_format).await?;
 			}
 			#[cfg(not(feature = "lottie"))]
 			anyhow::bail!("animated sticker can not be converted, if mstickerlib is compliled without the `lottie` feature.")
@@ -94,7 +94,7 @@ impl PhotoSize {
 		if image.file_name.ends_with(".webm") && !advance_config.keep_webm {
 			#[cfg(feature = "ffmpeg")]
 			{
-				image = image.convert_webm_if_webp(advance_config.animation_format).await?;
+				image = image.convert_webm2webp().await?;
 			}
 			#[cfg(not(feature = "ffmpeg"))]
 			anyhow::bail!("video sticker can not be converted, if mstickerlib is compliled without the `ffmpeg` feature.")

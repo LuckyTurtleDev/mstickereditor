@@ -17,6 +17,7 @@ use strum_macros::Display;
 #[cfg(feature = "lottie")]
 use tempfile::NamedTempFile;
 
+// todo: remove copy trait. Or will gif support droppet first?
 #[derive(Clone, Copy, Debug, Default, Deserialize, Display)]
 #[serde(tag = "animation_format", rename_all = "lowercase")]
 pub enum AnimationFormat {
@@ -50,14 +51,16 @@ where
 
 impl Image {
 	pub fn mime_type(&self) -> anyhow::Result<String> {
-		Ok(format!(
-			"image/{}",
-			Path::new(&self.file_name)
-				.extension()
-				.ok_or_else(|| anyhow::anyhow!("ERROR: extracting mimetype from path {}", self.file_name))?
-				.to_str()
-				.ok_or_else(|| anyhow::anyhow!("ERROR: converting mimetype to string"))?
-		))
+		let extension = Path::new(&self.file_name)
+			.extension()
+			.ok_or_else(|| anyhow::anyhow!("ERROR: extracting mimetype from path {}", self.file_name))?
+			.to_str()
+			.ok_or_else(|| anyhow::anyhow!("ERROR: converting mimetype to string"))?;
+		Ok(if extension == "webm" {
+			format!("video/{extension}",)
+		} else {
+			format!("image/{extension}",)
+		})
 	}
 
 	/// unpack gzip compression `tgs`, converting it to `lottie`, ignore other formats
@@ -77,14 +80,6 @@ impl Image {
 			})
 		})
 		.await?
-	}
-
-	#[cfg(feature = "lottie")]
-	pub(crate) async fn convert_lottie_if_some(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
-		match animation_format {
-			None => Ok(self),
-			Some(animation_format) => self.convert_lottie(animation_format).await
-		}
 	}
 
 	/// convert `tgs` image to webp or gif, ignore other formats
@@ -122,14 +117,6 @@ impl Image {
 			})
 		})
 		.await?
-	}
-
-	#[cfg(feature = "ffmpeg")]
-	pub(crate) async fn convert_webm_if_webp(self, animation_format: Option<AnimationFormat>) -> anyhow::Result<Self> {
-		match animation_format {
-			Some(AnimationFormat::Webp) => self.convert_webm2webp().await,
-			_ => Ok(self)
-		}
 	}
 
 	#[cfg(feature = "ffmpeg")]

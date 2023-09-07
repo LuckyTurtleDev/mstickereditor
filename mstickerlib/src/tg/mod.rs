@@ -22,7 +22,7 @@ where
 {
 	/// animaton format, to which animated sticker will be converted.
 	/// If `None` original format will be used, this is propably not supported by matrix cilents.
-	pub animation_format: Option<AnimationFormat>,
+	pub animation_format: AnimationFormat,
 	/// database to track, which files was already uploaded,
 	/// to aviod duplicaded uploads of the same file
 	pub database: Option<&'a D>,
@@ -45,7 +45,7 @@ where
 {
 	fn default() -> Self {
 		Self {
-			animation_format: Some(AnimationFormat::Webp),
+			animation_format: AnimationFormat::Webp,
 			database: None,
 			dry_run: false,
 			keep_webm: false,
