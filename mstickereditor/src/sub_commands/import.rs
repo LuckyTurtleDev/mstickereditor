@@ -25,10 +25,16 @@ pub struct Opt {
 	#[clap(short = 'd', long)]
 	dryrun: bool,
 
-	/// Do not format the stickers;
-	/// The stickers can may not be shown by a matrix client
-	#[clap(short = 'F', long)]
-	noformat: bool
+	/// Do not format video stickers.
+	/// The stickers can may not be shown by a matrix client.
+	#[clap(long)]
+	keep_webm: bool,
+
+	/// Do not format animated stickers.
+	/// The stickers can may not be shown by a matrix client.
+	/// Lottie files will be unpack from zstd archive.
+	#[clap(long)]
+	keep_lottie: bool
 }
 
 #[tokio::main]
@@ -52,7 +58,10 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	let mut import_config = ImportConfig::default();
 	import_config.database = Some(&database);
 	import_config.dry_run = opt.dryrun;
+	import_config.keep_webm = opt.keep_webm;
+	import_config.keep_lottie = opt.keep_lottie;
 	let import_config = import_config;
+	let mut empty_packs = Vec::new();
 
 	for pack in packs {
 		info!("loading data for {pack}");
@@ -67,12 +76,14 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 					let err = err.context(format!("failed to import sticker {index} from pack {pack:?}"));
 					error!("{err:?}");
 				}
-				warn!("Sticker pack {} will not be complete", tg_pack.name());
+				warn!("Sticker pack {} is not complete", tg_pack.name());
+				empty_packs.push(tg_pack.name().to_owned());
 				matrix_pack
 			}
 		};
 		if matrix_pack.stickers.is_empty() {
-			bail!("imported pack {pack:?} is empty")
+			error!("Sticker pack {} is empty", tg_pack.name());
+			continue;
 		}
 		if opt.save {
 			info!("save stickers of pack {} to disk", tg_pack.name());
@@ -93,6 +104,9 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 		let path: PathBuf = format!("./{}.json", tg_pack.name()).into();
 		info!("save stickerpack to {:?}", path);
 		fs::write(path, serde_json::to_string(&matrix_pack)?).await?;
+	}
+	if !empty_packs.is_empty() {
+		bail!("The following packs are empty {empty_packs:?}");
 	}
 	Ok(())
 }

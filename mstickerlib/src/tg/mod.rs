@@ -29,7 +29,14 @@ where
 	/// Do not upload anythink to matirx.
 	/// **WARNING:** the generate stickerpack will not have valid matrix urls.
 	/// Use this function only for testing and to prevent your homesever from being spammed with files while testing.
-	pub dry_run: bool
+	pub dry_run: bool,
+	/// Do not convert video stickers and keep webm.
+	/// Import of video stickers fail, if set to `false` and `ffmpeg` features is dissable.
+	pub keep_webm: bool,
+	/// Do not convert animated sticker and keep lootie files.
+	/// Animated sticker will be still unpack (they are zstd compressed lottie files).
+	/// Import of animated stickers fail, if set to `false` and `lottie` features is dissable.
+	pub keep_lottie: bool
 }
 
 impl<D> Default for ImportConfig<'_, D>
@@ -40,7 +47,9 @@ where
 		Self {
 			animation_format: Some(AnimationFormat::Webp),
 			database: None,
-			dry_run: false
+			dry_run: false,
+			keep_webm: false,
+			keep_lottie: false
 		}
 	}
 }

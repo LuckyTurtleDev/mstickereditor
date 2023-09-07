@@ -78,12 +78,27 @@ impl PhotoSize {
 		#[cfg(feature = "log")]
 		info!("download sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		// download and convert sticker from telegram
-		let image = self.download(tg_config).await?;
-		let image = image.unpack_tgs().await?;
-		#[cfg(feature = "lottie")]
-		let image = image.convert_lottie_if_some(advance_config.animation_format).await?;
-		#[cfg(feature = "ffmpeg")]
-		let image = image.convert_webm_if_webp(advance_config.animation_format).await?;
+		let mut image = self.download(tg_config).await?;
+		image = image.unpack_tgs().await?;
+		if image.file_name.ends_with(".lottie") && !advance_config.keep_lottie {
+			// file extension is now checked double.
+			// Here and inside `convert_...`
+			// But `convert_...` function does not exist, if feature is dissable.
+			#[cfg(feature = "lottie")]
+			{
+				image = image.convert_lottie_if_some(advance_config.animation_format).await?;
+			}
+			#[cfg(not(feature = "lottie"))]
+			anyhow::bail!("animated sticker can not be converted, if mstickerlib is compliled without the `lottie` feature.")
+		}
+		if image.file_name.ends_with(".webm") && !advance_config.keep_webm {
+			#[cfg(feature = "ffmpeg")]
+			{
+				image = image.convert_webm_if_webp(advance_config.animation_format).await?;
+			}
+			#[cfg(not(feature = "ffmpeg"))]
+			anyhow::bail!("video sticker can not be converted, if mstickerlib is compliled without the `ffmpeg` feature.")
+		}
 		#[cfg(feature = "log")]
 		info!("  upload sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
 		let mxc = if advance_config.dry_run {
