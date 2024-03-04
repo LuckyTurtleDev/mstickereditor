@@ -41,6 +41,38 @@ impl Display for MatrixUploadApiError {
 	}
 }
 
+#[cfg(any(not(feature = "ffmpeg"), not(feature = "lottie")))]
+#[derive(Error, Debug)]
+pub enum UnsupportedFormat {
+	#[cfg(not(feature = "lottie"))]
+	Lottie,
+	#[cfg(not(feature = "ffmpeg"))]
+	Webm,
+}
+
+#[cfg(any(not(feature = "ffmpeg"), not(feature = "lottie")))]
+impl Display for UnsupportedFormat {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		match self {
+			#[cfg(not(feature = "lottie"))]
+    		Self::Lottie => write!(f, "animated")?,
+    		#[cfg(not(feature = "ffmpeg"))]
+    		Self::Webm => write!(f, "video")?
+		}	
+		write!(
+			f,
+			" sticker are unsupported, since mstickerlib was compliled without the ",
+		)?;
+		match self {
+			#[cfg(not(feature = "lottie"))]
+    		Self::Lottie => write!(f, "\"lottie\"")?,
+    		#[cfg(not(feature = "ffmpeg"))]
+    		Self::Webm => write!(f, "\"ffmpeg\"")?
+		}
+		write!(f," feature.")
+	}
+}
+
 #[derive(Error, Debug)]
 pub enum Error {
 	#[error(transparent)]
@@ -77,5 +109,8 @@ pub enum Error {
 	#[error("failed to insert or check for file duplicate at the database: {0:?}")]
 	Database(anyhow::Error),
 	#[error(transparent)]
-	MatrixUpload(#[from] MatrixUploadApiError)
+	MatrixUpload(#[from] MatrixUploadApiError),
+	#[cfg(any(not(feature = "ffmpeg"), not(feature = "lottie")))]
+	#[error(transparent)]
+	UnsupportedFormat(#[from] UnsupportedFormat)
 }
