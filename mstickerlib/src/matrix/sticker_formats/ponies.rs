@@ -3,11 +3,13 @@
 //! This is already supported by many matrix clients like Neko, Cinny, Fluffychat and more.
 //! Keep in mind that ponies specification is not stable yet.
 
+use crate::{
+	error::NoMimeType,
+	matrix::{self, Mxc}
+};
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-
-use crate::matrix::{self, Mxc};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct PackInfo {
@@ -36,7 +38,7 @@ pub struct MetaData {
 	pub mimetype: String
 }
 impl TryFrom<crate::image::Image> for MetaData {
-	type Error = anyhow::Error;
+	type Error = NoMimeType;
 	fn try_from(value: crate::image::Image) -> Result<Self, Self::Error> {
 		Ok(Self {
 			w: value.width,

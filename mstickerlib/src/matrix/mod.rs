@@ -1,4 +1,12 @@
-use crate::CLIENT;
+pub mod sticker;
+pub mod sticker_formats;
+pub mod stickerpack;
+mod stickerpicker;
+
+use crate::{
+	error::{Error, MatrixUploadApiError},
+	CLIENT
+};
 use anyhow::bail;
 use derive_getters::Getters;
 use reqwest::Url;
@@ -8,12 +16,8 @@ use std::{
 	ops::Deref,
 	sync::Arc
 };
-
-mod stickerpicker;
 use stickerpicker::StickerWidget;
-pub mod sticker;
-pub mod sticker_formats;
-pub mod stickerpack;
+use thiserror::Error;
 
 /// Matrix file url.
 ///
@@ -103,11 +107,15 @@ pub struct Config {
 	pub access_token: String
 }
 
-#[derive(Debug, Deserialize)]
-struct MatrixError {
-	errcode: String,
-	error: String,
-	_retry_after_ms: Option<u32>
+/// see <https://spec.matrix.org/latest/client-server-api/#standard-error-response>
+#[derive(Debug, Deserialize, Error)]
+#[error("Matrix api request was not successful: {errcode} {error}")]
+pub struct MatrixError {
+	/// see <https://spec.matrix.org/latest/client-server-api/#common-error-codes>
+	pub errcode: String,
+	/// A human-readable error message.
+	pub error: String,
+	pub retry_after_ms: Option<u32>
 }
 
 #[allow(dead_code)]
@@ -162,13 +170,13 @@ pub async fn whoami(matrix: &Config) -> anyhow::Result<Whoami> {
 	}
 }
 
-pub(crate) async fn upload(matrix: &Config, filename: &String, data: Arc<Vec<u8>>, mimetype: &str) -> anyhow::Result<Mxc> {
+pub(crate) async fn upload(matrix: &Config, filename: &String, data: Arc<Vec<u8>>, mimetype: &str) -> Result<Mxc, Error> {
 	let mut mxc = upload_ref(matrix, filename, data.as_slice(), mimetype).await?;
 	mxc.data = Some(data);
 	Ok(mxc)
 }
 
-pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], mimetype: &str) -> anyhow::Result<Mxc> {
+pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], mimetype: &str) -> Result<Mxc, Error> {
 	let answer = CLIENT
 		.get()
 		.post(&format!("{}/_matrix/media/r0/upload", matrix.homeserver_url))
@@ -180,13 +188,11 @@ pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], 
 	if answer.status() != 200 {
 		let status = answer.status();
 		let error: Result<MatrixError, _> = answer.json().await;
-		let error = error.map(|err| format!(": {} {}", err.errcode, err.error));
-		bail!(
-			"failed to upload sticker {}: {}{}",
-			filename,
-			status,
-			error.unwrap_or_default()
-		);
+		return Err(Error::MatrixUpload(MatrixUploadApiError {
+			status_code: status,
+			filename: filename.to_owned(),
+			matrix_error: error
+		}));
 	}
 	let content_uri: MatrixContentUri = answer.json().await?;
 	Ok(content_uri.content_uri.into())

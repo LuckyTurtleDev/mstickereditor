@@ -44,7 +44,7 @@ impl StickerPack {
 		tg_config: &Config,
 		matrix_config: &matrix::Config,
 		advance_config: &ImportConfig<'a, D>
-	) -> Result<matrix::stickerpack::StickerPack, (matrix::stickerpack::StickerPack, Vec<(usize, anyhow::Error)>)>
+	) -> Result<matrix::stickerpack::StickerPack, (matrix::stickerpack::StickerPack, Vec<(usize, Error)>)>
 	where
 		D: Database
 	{
