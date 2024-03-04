@@ -32,7 +32,6 @@ impl PhotoSize {
 		let file: super::File = super::tg_get(tg_config, "getFile", [("file_id", &self.file_id)]).await?;
 		let data = CLIENT
 			.get()
-			.await
 			.get(format!(
 				"https://api.telegram.org/file/bot{}/{}",
 				tg_config.bot_key, file.file_path

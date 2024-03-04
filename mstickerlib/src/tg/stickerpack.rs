@@ -1,6 +1,9 @@
 use super::{sticker::Sticker, tg_get, Config, ImportConfig};
-use crate::{database::Database, matrix};
-use anyhow::anyhow;
+use crate::{
+	database::Database,
+	error::{Error, InvalidPackUrl},
+	matrix
+};
 use derive_getters::Getters;
 use futures_util::future::join_all;
 use serde::Deserialize;
@@ -20,8 +23,8 @@ pub struct StickerPack {
 
 impl StickerPack {
 	/// Request a stickerpack by its name.
-	pub async fn get(name: &str, tg_config: &Config) -> anyhow::Result<Self> {
-		let mut pack: Result<Self, anyhow::Error> = tg_get(tg_config, "getStickerSet", [("name", name)]).await;
+	pub async fn get(name: &str, tg_config: &Config) -> Result<Self, Error> {
+		let mut pack: Result<Self, _> = tg_get(tg_config, "getStickerSet", [("name", name)]).await;
 		if let Ok(ref mut pack) = pack {
 			for (i, sticker) in pack.stickers.iter_mut().enumerate() {
 				sticker.pack_name = pack.name.clone();
@@ -103,14 +106,11 @@ impl StickerPack {
 ///
 /// The url must start with `https://t.me/addstickers/`, `t.me/addstickers/` or
 /// `tg://addstickers?set=`.
-pub fn pack_url_to_name(url: &str) -> anyhow::Result<&str> {
-	url.strip_prefix("https://t.me/addstickers/").or_else(|| {
-		url.strip_prefix("t.me/addstickers/")
-	}).or_else(|| {
-		url.strip_prefix("tg://addstickers?set=")
-	}).ok_or_else(|| {
-		anyhow!("{url:?} does not look like a Telegram StickerPack\nPack url should start with \"https://t.me/addstickers/\", \"t.me/addstickers/\" or \"tg://addstickers?set=\"")
-	})
+pub fn pack_url_to_name(url: &str) -> Result<&str, InvalidPackUrl> {
+	url.strip_prefix("https://t.me/addstickers/")
+		.or_else(|| url.strip_prefix("t.me/addstickers/"))
+		.or_else(|| url.strip_prefix("tg://addstickers?set="))
+		.ok_or_else(|| InvalidPackUrl(url.to_owned()))
 }
 
 #[cfg(test)]
