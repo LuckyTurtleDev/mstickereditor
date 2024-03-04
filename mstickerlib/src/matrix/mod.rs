@@ -115,6 +115,7 @@ pub struct MatrixError {
 	pub errcode: String,
 	/// A human-readable error message.
 	pub error: String,
+	/// ratelimit timeout
 	pub retry_after_ms: Option<u32>
 }
 

@@ -73,7 +73,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 			Ok(pack) => pack,
 			Err((matrix_pack, errors)) => {
 				for (index, err) in errors {
-					let err = err.context(format!("failed to import sticker {index} from pack {pack:?}"));
+					let err = anyhow::Error::from(err).context(format!("failed to import sticker {index} from pack {pack:?}"));
 					error!("{err:?}");
 				}
 				warn!("Sticker pack {} is not complete", tg_pack.name());

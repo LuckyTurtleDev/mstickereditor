@@ -22,7 +22,6 @@ pub struct NoMimeType;
 #[derive(Error, Debug)]
 pub struct MatrixUploadApiError {
 	pub status_code: StatusCode,
-	/// see <https://spec.matrix.org/latest/client-server-api/#common-error-codes>
 	/// entry is a Result, since getting the error itself can also fail
 	pub matrix_error: Result<MatrixError, reqwest::Error>,
 	pub filename: String
