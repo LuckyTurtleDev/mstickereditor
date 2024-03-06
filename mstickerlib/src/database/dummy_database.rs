@@ -1,5 +1,4 @@
 use super::{Database, Hash};
-use async_trait::async_trait;
 
 /// Dummy database to be used as default generic.
 /// This database should be never constructed or used.
@@ -7,10 +6,9 @@ use async_trait::async_trait;
 #[non_exhaustive]
 pub struct DummyDatabase {}
 
-#[async_trait]
 impl Database for DummyDatabase {
-	async fn get(&self, _: &Hash) -> Option<String> {
-		None
+	async fn get(&self, _: &Hash) -> anyhow::Result<Option<String>> {
+		Ok(None)
 	}
 
 	async fn add(&self, _: Hash, _url: String) -> anyhow::Result<()> {

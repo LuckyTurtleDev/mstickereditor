@@ -155,16 +155,14 @@ impl Image {
 
 		// if database is some and datbase.unwrap().get() is also some
 		if let Some(db) = database {
-			if let Some(url) = db.get(&hash).await {
+			if let Some(url) = db.get(&hash).await.map_err(Error::Database)? {
 				return Ok((url.into(), false));
 			}
 		}
 
 		let mxc = matrix::upload(matrix_config, &self.file_name, self.data.clone(), &self.mime_type()?).await?;
 		if let Some(db) = database {
-			db.add(*hash, mxc.url().to_owned())
-				.await
-				.map_err(|err| Error::Database(err))?;
+			db.add(*hash, mxc.url().to_owned()).await.map_err(Error::Database)?;
 		}
 		Ok((mxc, true))
 	}

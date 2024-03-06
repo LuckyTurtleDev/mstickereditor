@@ -1,7 +1,6 @@
 use super::{Database, Hash};
 
 use anyhow;
-use async_trait::async_trait;
 use futures_util::stream::StreamExt as _;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
@@ -74,12 +73,11 @@ impl FileDatabase {
 	}
 }
 
-#[async_trait]
 impl Database for FileDatabase {
-	async fn get(&self, hash: &Hash) -> Option<String> {
+	async fn get(&self, hash: &Hash) -> anyhow::Result<Option<String>> {
 		let lock = self.tree.read().await;
 		let ret = lock.get(hash);
-		ret.cloned()
+		Ok(ret.cloned())
 	}
 
 	async fn add(&self, hash: Hash, url: String) -> anyhow::Result<()> {
