@@ -4,10 +4,9 @@ pub mod stickerpack;
 mod stickerpicker;
 
 use crate::{
-	error::{Error, MatrixUploadApiError},
+	error::{Error, MatrixError},
 	CLIENT
 };
-use anyhow::bail;
 use derive_getters::Getters;
 use reqwest::Url;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
@@ -110,7 +109,7 @@ pub struct Config {
 /// see <https://spec.matrix.org/latest/client-server-api/#standard-error-response>
 #[derive(Debug, Deserialize, Error)]
 #[error("Matrix api request was not successful: {errcode} {error}")]
-pub struct MatrixError {
+pub struct MatrixApiError {
 	/// see <https://spec.matrix.org/latest/client-server-api/#common-error-codes>
 	pub errcode: String,
 	/// A human-readable error message.
@@ -131,7 +130,7 @@ struct MatrixContentUri {
 	content_uri: String
 }
 
-pub async fn set_widget(matrix: &Config, sender: String, url: String) -> anyhow::Result<()> {
+pub async fn set_widget(matrix: &Config, sender: String, url: String) -> Result<(), Error> {
 	let stickerwidget = StickerWidget::new(url, sender);
 	let answer = CLIENT
 		.get()
@@ -146,14 +145,17 @@ pub async fn set_widget(matrix: &Config, sender: String, url: String) -> anyhow:
 		.await?;
 	if answer.status() != 200 {
 		let status = answer.status();
-		let error: Result<MatrixError, _> = answer.json().await;
-		let error = error.map(|err| format!(": {} {}", err.errcode, err.error));
-		bail!("{} {}", status, error.unwrap_or_default())
+		let error: Result<MatrixApiError, _> = answer.json().await;
+		return Err(Error::MatrixUpload(MatrixError {
+			status_code: status,
+			filename: None,
+			matrix_error: error
+		}));
 	}
 	Ok(())
 }
 
-pub async fn whoami(matrix: &Config) -> anyhow::Result<Whoami> {
+pub async fn whoami(matrix: &Config) -> Result<Mxc, Error> {
 	Url::parse(&matrix.homeserver_url)?; //check if homeserver_url is a valid url
 	let answer = CLIENT
 		.get()
@@ -163,9 +165,12 @@ pub async fn whoami(matrix: &Config) -> anyhow::Result<Whoami> {
 		.await?;
 	if answer.status() != 200 {
 		let status = answer.status();
-		let error: Result<MatrixError, _> = answer.json().await;
-		let error = error.map(|err| format!(": {} {}", err.errcode, err.error));
-		bail!("{} {}", status, error.unwrap_or_default())
+		let error: Result<MatrixApiError, _> = answer.json().await;
+		Err(Error::MatrixUpload(MatrixError {
+			status_code: status,
+			filename: None,
+			matrix_error: error
+		}))
 	} else {
 		Ok(answer.json().await?)
 	}
@@ -188,10 +193,10 @@ pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], 
 		.await?;
 	if answer.status() != 200 {
 		let status = answer.status();
-		let error: Result<MatrixError, _> = answer.json().await;
-		return Err(Error::MatrixUpload(MatrixUploadApiError {
+		let error: Result<MatrixApiError, _> = answer.json().await;
+		return Err(Error::MatrixUpload(MatrixError {
 			status_code: status,
-			filename: filename.to_owned(),
+			filename: Some(filename.to_owned()),
 			matrix_error: error
 		}));
 	}

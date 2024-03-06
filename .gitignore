@@ -1,7 +1,7 @@
 /target
 config.toml
 /stickers
-.json
+*.json
 *~
 \#*#
 .#*#

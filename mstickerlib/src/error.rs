@@ -1,4 +1,4 @@
-pub use crate::matrix::MatrixError;
+pub use crate::matrix::MatrixApiError;
 use reqwest::StatusCode;
 use std::{fmt::Display, io};
 use thiserror::Error;
@@ -20,20 +20,25 @@ pub struct TelgramApiError {
 pub struct NoMimeType;
 
 #[derive(Error, Debug)]
-pub struct MatrixUploadApiError {
+pub struct MatrixError {
 	pub status_code: StatusCode,
 	/// entry is a Result, since getting the error itself can also fail
-	pub matrix_error: Result<MatrixError, reqwest::Error>,
-	pub filename: String
+	pub matrix_error: Result<MatrixApiError, reqwest::Error>,
+	/// If the api request has try to upload an sticker, the filname of the sticker is stored here.
+	pub filename: Option<String>
 }
 
-impl Display for MatrixUploadApiError {
+impl Display for MatrixError {
 	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		write!(
-			f,
-			"failed to upload sticker {:?} with status code {}:\n",
-			self.filename, self.status_code
-		)?;
+		if let Some(filename) = &self.filename {
+			write!(
+				f,
+				"failed to upload sticker {filename:?} with status code {}:\n",
+				self.status_code
+			)?;
+		} else {
+			write!(f, "Matrix api request return with status code {}:\n", self.status_code)?;
+		}
 		match &self.matrix_error {
 			Ok(value) => write!(f, "{value}"),
 			Err(error) => write!(f, "Error getting error: {error}")
@@ -106,8 +111,10 @@ pub enum Error {
 	#[error("failed to insert or check for file duplicate at the database: {0:?}")]
 	Database(anyhow::Error),
 	#[error(transparent)]
-	MatrixUpload(#[from] MatrixUploadApiError),
+	MatrixUpload(#[from] MatrixError),
 	#[cfg(any(not(feature = "ffmpeg"), not(feature = "lottie")))]
 	#[error(transparent)]
-	UnsupportedFormat(#[from] UnsupportedFormat)
+	UnsupportedFormat(#[from] UnsupportedFormat),
+	#[error("Invalid matrix homeserver urls: {0}")]
+	InvalidHomeServerUrl(#[from] url::ParseError)
 }
