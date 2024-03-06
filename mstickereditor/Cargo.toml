@@ -37,3 +37,6 @@ lottie = ["mstickerlib/lottie"]
 [profile.release]
 lto = true
 opt-level = 3
+
+[lints]
+workspace = true

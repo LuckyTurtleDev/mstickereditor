@@ -52,3 +52,6 @@ lottie = ["dep:lottieconv", "dep:tempfile", "dep:webp-animation", "dep:gif"]
 [profile.release]
 lto = true
 opt-level = 3
+
+[lints]
+workspace = true

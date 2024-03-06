@@ -1,4 +1,9 @@
 # -*- eval: (cargo-minor-mode 1) -*-
 
+resolver = "2"
+
 [workspace]
 members = ["mstickerlib", "mstickereditor"]
+
+[workspace.lints.rust]
+async_fn_in_trait = "allow"
