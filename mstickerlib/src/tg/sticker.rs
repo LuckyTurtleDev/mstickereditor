@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use super::ImportConfig;
 use crate::{
+	error::Error,
 	image::Image,
 	matrix::{self, sticker_formats::ponies, Mxc},
 	CLIENT
@@ -28,11 +29,10 @@ pub struct PhotoSize {
 }
 impl PhotoSize {
 	/// download the image of the PhotoSize
-	pub async fn download(&self, tg_config: &super::Config) -> anyhow::Result<Image> {
+	pub async fn download(&self, tg_config: &super::Config) -> Result<Image, Error> {
 		let file: super::File = super::tg_get(tg_config, "getFile", [("file_id", &self.file_id)]).await?;
 		let data = CLIENT
 			.get()
-			.await
 			.get(format!(
 				"https://api.telegram.org/file/bot{}/{}",
 				tg_config.bot_key, file.file_path
@@ -59,7 +59,7 @@ impl PhotoSize {
 		positon: usize,
 		emoji: Option<&str>,
 		thumb: bool
-	) -> anyhow::Result<matrix::sticker::Image>
+	) -> Result<matrix::sticker::Image, Error>
 	where
 		D: crate::database::Database
 	{
@@ -89,7 +89,7 @@ impl PhotoSize {
 				image = image.convert_lottie(advance_config.animation_format).await?;
 			}
 			#[cfg(not(feature = "lottie"))]
-			anyhow::bail!("animated sticker can not be converted, if mstickerlib is compliled without the `lottie` feature.")
+			return Err(Error::UnsupportedFormat(crate::error::UnsupportedFormat::Lottie));
 		}
 		if image.file_name.ends_with(".webm") && !advance_config.keep_webm {
 			#[cfg(feature = "ffmpeg")]
@@ -97,7 +97,7 @@ impl PhotoSize {
 				image = image.convert_webm2webp().await?;
 			}
 			#[cfg(not(feature = "ffmpeg"))]
-			anyhow::bail!("video sticker can not be converted, if mstickerlib is compliled without the `ffmpeg` feature.")
+			return Err(Error::UnsupportedFormat(crate::error::UnsupportedFormat::Webm));
 		}
 		#[cfg(feature = "log")]
 		info!("  upload sticker {pack_name}:{positon:03} {emoji:<2} {thumb}");
@@ -149,7 +149,7 @@ impl Sticker {
 		tg_config: &super::Config,
 		matrix_config: &crate::matrix::Config,
 		advance_config: &ImportConfig<'a, D>
-	) -> anyhow::Result<crate::matrix::sticker::Sticker>
+	) -> Result<crate::matrix::sticker::Sticker, Error>
 	where
 		D: crate::database::Database
 	{

@@ -1,5 +1,6 @@
 //! This module deals with translating telegram's video stickers to webp animations.
 
+use crate::error::Error;
 use ffmpeg::{
 	codec::Context as CodecContext,
 	decoder,
@@ -11,7 +12,7 @@ use ffmpeg::{
 use std::path::Path;
 use webp_animation::{Encoder, WebPData};
 
-pub(crate) fn webm2webp<P: AsRef<Path>>(file: &P) -> anyhow::Result<(WebPData, u32, u32)> {
+pub(crate) fn webm2webp<P: AsRef<Path>>(file: &P) -> Result<(WebPData, u32, u32), Error> {
 	// heavily inspired by
 	// https://github.com/zmwangx/rust-ffmpeg/blob/master/examples/dump-frames.rs
 
@@ -36,7 +37,7 @@ pub(crate) fn webm2webp<P: AsRef<Path>>(file: &P) -> anyhow::Result<(WebPData, u
 	let mut timestamp = 0;
 	let frame_rate = input.rate();
 	let time_per_frame = frame_rate.1 * 1000 / frame_rate.0;
-	let mut receive_and_process_decoded_frames = |decoder: &mut decoder::Video| -> anyhow::Result<()> {
+	let mut receive_and_process_decoded_frames = |decoder: &mut decoder::Video| -> Result<(), Error> {
 		let mut decoded = Video::empty();
 		while decoder.receive_frame(&mut decoded).is_ok() {
 			let mut rgba_frame = Video::empty();

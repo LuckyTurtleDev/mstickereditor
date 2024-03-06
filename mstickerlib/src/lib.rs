@@ -5,72 +5,50 @@
 //! **WARINING: this crate is unstable und still have many anti-patterns**
 
 pub mod database;
+pub mod error;
 pub mod image;
 pub mod matrix;
 pub mod tg;
 #[cfg(feature = "ffmpeg")]
 mod video;
 
-//mod sub_commands;
+use std::sync::OnceLock;
 
-use std::cell::UnsafeCell;
-use tokio::sync::RwLock;
-
-static CLIENT: Client = Client {
-	lock: RwLock::const_new(()),
-	client: UnsafeCell::new(None)
-};
-
-unsafe impl Sync for Client {}
-
-struct Client {
-	lock: RwLock<()>,
-	client: UnsafeCell<Option<reqwest::Client>>
-}
-
-// XXX Hacky: We abuse the fact that a client will be exactly once either set or
-// created, so we can ensure this function will be called exactly once. Also, the
-// HTTP client will always be needed before ffmpeg.
-fn init() {
-	#[cfg(feature = "ffmpeg")]
-	ffmpeg::init().expect("Failed to initialise ffmpeg");
-}
+struct Client(OnceLock<reqwest::Client>);
+static CLIENT: Client = Client(OnceLock::new());
 
 impl Client {
-	pub(crate) async fn get(&self) -> &reqwest::Client {
-		// safety: this method ensures that the client is set from None to Some exactly once, and the
-		// value is never altered thereafter. Once a value was set, all references to that value are
-		// valid for the lifetime of self.
-
-		let guard = self.lock.read().await;
-		let client = unsafe { self.client.get().as_ref().unwrap() };
-		if let Some(client) = client {
-			return client;
-		}
-		drop(guard);
-
-		#[allow(unused_variables)]
-		let guard = self.lock.write().await;
-		let client = unsafe { self.client.get().as_mut().unwrap() };
-		if client.is_none() {
-			*client = Some(reqwest::Client::new());
-			init();
-		}
-		client.as_ref().unwrap()
+	fn get(&self) -> &'static reqwest::Client {
+		if let Some(value) = CLIENT.0.get() {
+			return value;
+		};
+		set_client(reqwest::Client::default()).ok();
+		CLIENT.0.get().unwrap() //now it must be set
 	}
 }
 
-pub async fn set_client(client: reqwest::Client) {
-	#[allow(unused_variables)]
-	let guard = CLIENT.lock.read();
-	let lib_client = unsafe { CLIENT.client.get().as_mut().unwrap() };
-	if lib_client.is_some() {
-		panic!("reqwest client was already set")
-	}
-	*lib_client = Some(client);
+/// set the crate wide [reqwest::Client].
+/// This function should be called before performing any other interaction with this create.
+/// Otherwise the client can not be set anymore and an error will be return.
+/// If this function is not called, the client will be automaticly initialize with [reqwest::Client::default]
+pub fn set_client(client: reqwest::Client) -> Result<(), ()> {
 	init();
+	CLIENT.0.set(client).map_err(|_| ())
 }
 
-pub async fn get_client() -> &'static reqwest::Client {
-	CLIENT.get().await
+pub fn get_client() -> &'static reqwest::Client {
+	CLIENT.get()
+}
+
+// XXX Hacky: We abuse the fact that HTTP client will always be needed before ffmpeg.
+fn init() {
+	#[cfg(feature = "ffmpeg")]
+	{
+		static GUARD: OnceLock<()> = OnceLock::new();
+		// from doc: "Returns Ok(()) if the cell’s value was set by this call."
+		// so init will only be called once
+		if GUARD.set(()).is_ok() {
+			ffmpeg::init().expect("Failed to initialise ffmpeg");
+		}
+	}
 }

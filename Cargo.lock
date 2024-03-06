@@ -537,9 +537,9 @@ dependencies = [
 
 [[package]]
 name = "gif"
-version = "0.11.4"
+version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3edd93c6756b4dfaf2709eafcc345ba2636565295c198a9cfbf75fa5e3e00b06"
+checksum = "80792593675e051cf94a4b111980da2ba60d4a83e43e0048c5693baab3977045"
 dependencies = [
  "color_quant",
  "weezl",
@@ -820,9 +820,9 @@ checksum = "b5e6163cb8c49088c2c36f57875e58ccd8c87c7427f7fbd50ea6710b2f3f2e8f"
 
 [[package]]
 name = "lottieconv"
-version = "0.2.3"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34653862168a94c57f95ffd50bcbf438a2447bed579d0d0035fa742cbb5ca88c"
+checksum = "e14e22db0782a8718347d851c62ffe57eca2eb1c0da5df7ef928d09a31472078"
 dependencies = [
  "gif",
  "rgb",
@@ -922,6 +922,7 @@ dependencies = [
  "flate2",
  "futures-util",
  "generic-array",
+ "gif",
  "indexmap 2.1.0",
  "log",
  "lottieconv",
@@ -936,6 +937,7 @@ dependencies = [
  "sha2",
  "strum_macros",
  "tempfile",
+ "thiserror",
  "tokio",
  "tokio-stream",
  "url",
@@ -1543,18 +1545,18 @@ checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thiserror"
-version = "1.0.56"
+version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d54378c645627613241d077a3a79db965db602882668f9136ac42af9ecb730ad"
+checksum = "1e45bcbe8ed29775f228095caf2cd67af7a4ccf756ebff23a306bf3e8b47b24b"
 dependencies = [
  "thiserror-impl",
 ]
 
 [[package]]
 name = "thiserror-impl"
-version = "1.0.56"
+version = "1.0.57"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa0faa943b50f3db30a20aa7e265dbc66076993efed8463e8de414e5d06d3471"
+checksum = "a953cb265bef375dae3de6663da4d3804eee9682ea80d8e2542529b73c531c81"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1820,9 +1822,9 @@ dependencies = [
 
 [[package]]
 name = "webp-animation"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aba37968c552fdaf2400f9f10d3e26b880d1183c77b686a4be91c74cec751d6a"
+checksum = "e3a656b424e13a9e8b35f2cb7f96ff81c9d796b7ce3b6966cd4f8fd4a15feba4"
 dependencies = [
  "libwebp-sys2",
  "log",
@@ -1836,9 +1838,9 @@ checksum = "1778a42e8b3b90bff8d0f5032bf22250792889a5cdc752aa0020c84abe3aaf10"
 
 [[package]]
 name = "weezl"
-version = "0.1.7"
+version = "0.1.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9193164d4de03a926d909d3bc7c30543cecb35400c02114792c2cae20d5e2dbb"
+checksum = "53a85b86a771b1c87058196170769dd264f66c0782acf1ae6cc51bfd64b39082"
 
 [[package]]
 name = "winapi"

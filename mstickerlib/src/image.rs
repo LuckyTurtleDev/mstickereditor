@@ -2,10 +2,9 @@
 use crate::video::webm2webp;
 use crate::{
 	database,
+	error::{Error, NoMimeType},
 	matrix::{self, Config, Mxc}
 };
-#[cfg(feature = "lottie")]
-use anyhow::anyhow;
 #[cfg(feature = "lottie")]
 use lottieconv::{Animation, Converter, Rgba};
 use once_cell::sync::Lazy;
@@ -50,12 +49,12 @@ where
 }
 
 impl Image {
-	pub fn mime_type(&self) -> anyhow::Result<String> {
+	pub fn mime_type(&self) -> Result<String, NoMimeType> {
 		let extension = Path::new(&self.file_name)
 			.extension()
-			.ok_or_else(|| anyhow::anyhow!("ERROR: extracting mimetype from path {}", self.file_name))?
+			.ok_or_else(|| NoMimeType)?
 			.to_str()
-			.ok_or_else(|| anyhow::anyhow!("ERROR: converting mimetype to string"))?;
+			.unwrap(); //this must be valid utf8 since we use a string as input
 		Ok(if extension == "webm" {
 			format!("video/{extension}",)
 		} else {
@@ -64,11 +63,11 @@ impl Image {
 	}
 
 	/// unpack gzip compression `tgs`, converting it to `lottie`, ignore other formats
-	pub async fn unpack_tgs(mut self) -> anyhow::Result<Self> {
+	pub async fn unpack_tgs(mut self) -> Result<Self, Error> {
 		if !self.file_name.ends_with(".tgs") {
 			return Ok(self);
 		}
-		tokio::task::spawn_blocking(move || {
+		let image: Result<Image, Error> = tokio::task::spawn_blocking(move || {
 			rayon_run(move || {
 				let mut output = Vec::new();
 				let input_reader = &**self.data;
@@ -79,12 +78,13 @@ impl Image {
 				Ok(self)
 			})
 		})
-		.await?
+		.await?;
+		Ok(image?)
 	}
 
 	/// convert `tgs` image to webp or gif, ignore other formats
 	#[cfg(feature = "lottie")]
-	pub async fn convert_lottie(self, animation_format: AnimationFormat) -> anyhow::Result<Self> {
+	pub async fn convert_lottie(self, animation_format: AnimationFormat) -> Result<Self, Error> {
 		if !self.file_name.ends_with(".lottie") {
 			return Ok(self);
 		}
@@ -95,7 +95,7 @@ impl Image {
 				let mut tmp = NamedTempFile::new()?;
 				tmp.write_all(&image.data)?;
 				tmp.flush()?;
-				let animation = Animation::from_file(tmp.path()).ok_or_else(|| anyhow!("Failed to load sticker"))?;
+				let animation = Animation::from_file(tmp.path()).ok_or_else(|| Error::AnimationLoadError)?;
 				let size = animation.size();
 				image.file_name.truncate(image.file_name.len() - 6);
 				let converter = Converter::new(animation);
@@ -121,7 +121,7 @@ impl Image {
 
 	#[cfg(feature = "ffmpeg")]
 	/// convert `webm` video stickers to webp, ignore other formats
-	pub async fn convert_webm2webp(mut self) -> anyhow::Result<Self> {
+	pub async fn convert_webm2webp(mut self) -> Result<Self, Error> {
 		if !self.file_name.ends_with(".webm") {
 			return Ok(self);
 		}
@@ -147,7 +147,7 @@ impl Image {
 
 	///upload image to matrix
 	/// return mxc_url and true if image was uploaded now; false if it was already uploaded before and exist at the database
-	pub async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> anyhow::Result<(Mxc, bool)>
+	pub async fn upload<D>(&self, matrix_config: &Config, database: Option<&D>) -> Result<(Mxc, bool), Error>
 	where
 		D: database::Database
 	{
@@ -162,7 +162,9 @@ impl Image {
 
 		let mxc = matrix::upload(matrix_config, &self.file_name, self.data.clone(), &self.mime_type()?).await?;
 		if let Some(db) = database {
-			db.add(*hash, mxc.url().to_owned()).await?;
+			db.add(*hash, mxc.url().to_owned())
+				.await
+				.map_err(|err| Error::Database(err))?;
 		}
 		Ok((mxc, true))
 	}

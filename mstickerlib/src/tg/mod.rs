@@ -1,5 +1,9 @@
-use crate::{database::Database, image::AnimationFormat, CLIENT};
-use anyhow::bail;
+use crate::{
+	database::Database,
+	error::{Error, TelgramApiError},
+	image::AnimationFormat,
+	CLIENT
+};
 use monostate::MustBe;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
@@ -78,7 +82,7 @@ enum TgResponse<T> {
 	}
 }
 
-async fn tg_get<T, P>(tg_config: &Config, operation: &str, params: P) -> anyhow::Result<T>
+async fn tg_get<T, P>(tg_config: &Config, operation: &str, params: P) -> Result<T, Error>
 where
 	T: DeserializeOwned,
 	P: Serialize,
@@ -86,7 +90,6 @@ where
 {
 	let resp: TgResponse<T> = CLIENT
 		.get()
-		.await
 		.get(format!("https://api.telegram.org/bot{}/{}", tg_config.bot_key, operation))
 		.query(&params)
 		.send()
@@ -97,7 +100,7 @@ where
 		TgResponse::Ok { result, .. } => result,
 		TgResponse::Err {
 			error_code, description, ..
-		} => bail!("Telegram request was not successful: {error_code} {description}")
+		} => return Err(Error::Telegram(TelgramApiError { error_code, description }))
 	};
 	Ok(result)
 }
