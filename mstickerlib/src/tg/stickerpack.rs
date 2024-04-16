@@ -16,8 +16,6 @@ use log::{info, warn};
 pub struct StickerPack {
 	pub(crate) name: String,
 	pub(crate) title: String,
-	pub(crate) is_animated: bool,
-	pub(crate) is_video: bool,
 	pub(crate) stickers: Vec<Sticker>
 }
 
@@ -51,12 +49,6 @@ impl StickerPack {
 		#[cfg(feature = "log")]
 		if log::log_enabled!(log::Level::Info) {
 			let mut output = "".to_owned();
-			if self.is_animated {
-				output += " animations";
-			}
-			if self.is_video {
-				output += " videos";
-			}
 			if !output.is_empty() {
 				output = format!(", include:{output}");
 			}
