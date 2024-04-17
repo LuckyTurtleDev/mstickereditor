@@ -155,7 +155,7 @@ pub async fn set_widget(matrix: &Config, sender: String, url: String) -> Result<
 	Ok(())
 }
 
-pub async fn whoami(matrix: &Config) -> Result<Mxc, Error> {
+pub async fn whoami(matrix: &Config) -> Result<Whoami, Error> {
 	Url::parse(&matrix.homeserver_url)?; //check if homeserver_url is a valid url
 	let answer = CLIENT
 		.get()
