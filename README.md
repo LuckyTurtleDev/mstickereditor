@@ -62,7 +62,7 @@ homeserver_url = "https://matrix-client.matrix.org"
 access_token = "YOUR-MATIRX-ACESSTOKEN"
 
 [sticker]
-transparent_color = { r = 0, g = 0, b = 0, alpha = true }
+transparent_color = { r = 0, g = 0, b = 0, a = true }
 animation_format = "webp"
 ```
 The `[sticker]` section is optional and can be left out.
