@@ -30,10 +30,16 @@ jobs:
         with:
           crate: cargo-all-features
       - run: cargo test-all-features --release -- --include-ignored
+        if: github.event_name != 'pull_request'
         env:
           RUST_BACKTRACE: 1
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
+      - run: cargo test-all-features --release
+        if: github.event_name == 'pull_request'
+        env:
+          RUST_BACKTRACE: 1
+          RUST_TEST_THREADS: 1
           
   test:
     strategy:
@@ -69,10 +75,16 @@ jobs:
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
       - run: cargo test --no-default-features --features ffmpeg,log -- --include-ignored
+        if: github.event_name != 'pull_request'
         env:
           RUST_BACKTRACE: 1
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
+      - run: cargo test --no-default-features --features ffmpeg,log
+        if: github.event_name == 'pull_request'
+        env:
+          RUST_BACKTRACE: 1
+          RUST_TEST_THREADS: 1
           
   rustfmt:
     runs-on: ubuntu-latest
