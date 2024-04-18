@@ -56,3 +56,7 @@ opt-level = 3
 
 [lints]
 workspace = true
+
+
+[package.metadata.cargo-all-features]
+denylist = ["ffmpeg-build"]
