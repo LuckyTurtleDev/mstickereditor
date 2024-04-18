@@ -7,7 +7,8 @@ on:
     types: [released]
 
 env:
-  PACKAGES: libavc1394-dev libavdevice-dev
+  PACKAGES: libavc1394-dev libavdevice-dev nasm
+  #nasm is needed to build fmpeg from source, if ffmpeg-future is aviable
 
 jobs:
   test-linux:
