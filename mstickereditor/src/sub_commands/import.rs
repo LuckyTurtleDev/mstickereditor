@@ -60,6 +60,7 @@ pub async fn run(mut opt: Opt) -> anyhow::Result<()> {
 	import_config.dry_run = opt.dryrun;
 	import_config.keep_webm = opt.keep_webm;
 	import_config.keep_lottie = opt.keep_lottie;
+	import_config.animation_format = config.sticker;
 	let import_config = import_config;
 	let mut empty_packs = Vec::new();
 
