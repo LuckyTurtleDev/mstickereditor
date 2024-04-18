@@ -46,6 +46,7 @@ rustc_version = "0.4.0"
 [features]
 default = ["ffmpeg", "log", "lottie"]
 ffmpeg = ["dep:ffmpeg", "dep:tempfile", "dep:webp-animation"]
+ffmpeg-build = ["ffmpeg", "ffmpeg/build"]
 log = ["dep:log"]
 lottie = ["dep:lottieconv", "dep:tempfile", "dep:webp-animation", "dep:gif"]
 
@@ -55,3 +56,7 @@ opt-level = 3
 
 [lints]
 workspace = true
+
+
+[package.metadata.cargo-all-features]
+denylist = ["ffmpeg-build"]

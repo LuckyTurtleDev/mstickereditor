@@ -7,7 +7,8 @@ on:
     types: [released]
 
 env:
-  PACKAGES: libavc1394-dev libavdevice-dev
+  PACKAGES: libavc1394-dev libavdevice-dev nasm
+  #nasm is needed to build fmpeg from source, if ffmpeg-future is aviable
 
 jobs:
   test-linux:
@@ -74,6 +75,10 @@ jobs:
             ~/.cargo/registry
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
+      - name: install cargo-all-features
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-all-features
       - run: cargo test --no-default-features --features ffmpeg,log -- --include-ignored
         if: github.event_name != 'pull_request'
         env:
