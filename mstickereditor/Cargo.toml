@@ -32,6 +32,7 @@ url = "2.2"
 [features]
 default = ["ffmpeg", "lottie"]
 ffmpeg = ["mstickerlib/ffmpeg"]
+ffmpeg-build = ["ffmpeg", "mstickerlib/ffmpeg-build"]
 lottie = ["mstickerlib/lottie"]
 
 [profile.release]
