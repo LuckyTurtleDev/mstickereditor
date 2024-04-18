@@ -75,13 +75,17 @@ jobs:
             ~/.cargo/registry
             target
           key: "${{runner.os}} Rust ${{steps.rust-toolchain.outputs.cachekey}} Lock ${{hashFiles('Cargo.lock')}}"
-      - run: cargo test --no-default-features --features ffmpeg,log -- --include-ignored
+      - name: install cargo-all-features
+        uses: baptiste0928/cargo-install@v2
+        with:
+          crate: cargo-all-features
+      - run: cargo test-all-features-- --include-ignored
         if: github.event_name != 'pull_request'
         env:
           RUST_BACKTRACE: 1
           RUST_TEST_THREADS: 1
           TG_BOT_KEY: ${{ secrets.TG_BOT_KEY }}
-      - run: cargo test --no-default-features --features ffmpeg,log
+      - run: cargo test-all-features
         if: github.event_name == 'pull_request'
         env:
           RUST_BACKTRACE: 1
