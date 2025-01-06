@@ -13,7 +13,7 @@ include = ["/src/**/*.rs", "/LICENSE", "/README.md"]
 [dependencies]
 anyhow = "1.0"
 derive-getters = "0.3.0"
-ffmpeg = { package = "ffmpeg-next", version = "7.0" , optional = true }
+ffmpeg = { package = "ffmpeg-next", version = "7.1" , optional = true }
 flate2 ="1.0"
 futures-util = "0.3.25"
 generic-array = { version = "0.14" , features = ["serde"] }
