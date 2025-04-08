@@ -135,7 +135,7 @@ pub async fn set_widget(matrix: &Config, sender: String, url: String) -> Result<
 	let answer = CLIENT
 		.get()
 		.put(format!(
-			"{}/_matrix/client/r0/user/{}/account_data/m.widgets",
+			"{}/_matrix/client/v3/user/{}/account_data/m.widgets",
 			matrix.homeserver_url, matrix.user
 		))
 		.query(&[("access_token", &matrix.access_token)])
@@ -159,7 +159,7 @@ pub async fn whoami(matrix: &Config) -> Result<Whoami, Error> {
 	Url::parse(&matrix.homeserver_url)?; //check if homeserver_url is a valid url
 	let answer = CLIENT
 		.get()
-		.get(format!("{}/_matrix/client/r0/account/whoami", matrix.homeserver_url))
+		.get(format!("{}/_matrix/client/v3/account/whoami", matrix.homeserver_url))
 		.query(&[("access_token", &matrix.access_token)])
 		.send()
 		.await?;
@@ -185,7 +185,7 @@ pub(crate) async fn upload(matrix: &Config, filename: &String, data: Arc<Vec<u8>
 pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], mimetype: &str) -> Result<Mxc, Error> {
 	let answer = CLIENT
 		.get()
-		.post(&format!("{}/_matrix/media/r0/upload", matrix.homeserver_url))
+		.post(&format!("{}/_matrix/media/v3/upload", matrix.homeserver_url))
 		.query(&[("access_token", &matrix.access_token), ("filename", filename)])
 		.header("Content-Type", mimetype)
 		.body(data.to_owned()) //TODO check for better solution
