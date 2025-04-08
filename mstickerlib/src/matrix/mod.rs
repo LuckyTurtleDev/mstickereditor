@@ -13,6 +13,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::{
 	fmt::{Debug, Display},
 	ops::Deref,
+	path::Path,
 	sync::Arc
 };
 use stickerpicker::StickerWidget;
@@ -176,17 +177,29 @@ pub async fn whoami(matrix: &Config) -> Result<Whoami, Error> {
 	}
 }
 
-pub(crate) async fn upload(matrix: &Config, filename: &String, data: Arc<Vec<u8>>, mimetype: &str) -> Result<Mxc, Error> {
-	let mut mxc = upload_ref(matrix, filename, data.as_slice(), mimetype).await?;
+pub(crate) async fn upload<P>(matrix: &Config, path: P, data: Arc<Vec<u8>>, mimetype: &str) -> Result<Mxc, Error>
+where
+	P: AsRef<Path>
+{
+	let mut mxc = upload_ref(matrix, path, data.as_slice(), mimetype).await?;
 	mxc.data = Some(data);
 	Ok(mxc)
 }
 
-pub(crate) async fn upload_ref(matrix: &Config, filename: &String, data: &[u8], mimetype: &str) -> Result<Mxc, Error> {
+pub(crate) async fn upload_ref<P>(matrix: &Config, path: P, data: &[u8], mimetype: &str) -> Result<Mxc, Error>
+where
+	P: AsRef<Path>
+{
+	let path = path.as_ref();
+	let filename = path
+		.file_name()
+		.unwrap_or_else(|| path.as_os_str())
+		.to_str()
+		.expect("Not valid UTF-8");
 	let answer = CLIENT
 		.get()
 		.post(&format!("{}/_matrix/media/v3/upload", matrix.homeserver_url))
-		.query(&[("access_token", &matrix.access_token), ("filename", filename)])
+		.query(&[("access_token", matrix.access_token.as_str()), ("filename", filename)])
 		.header("Content-Type", mimetype)
 		.body(data.to_owned()) //TODO check for better solution
 		.send()
