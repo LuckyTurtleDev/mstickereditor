@@ -196,9 +196,10 @@ where
 		.unwrap_or_else(|| path.as_os_str())
 		.to_str()
 		.expect("Not valid UTF-8");
+	let slash = if matrix.homeserver_url.ends_with('/') { "" } else { "/" };
 	let answer = CLIENT
 		.get()
-		.post(&format!("{}/_matrix/media/v3/upload", matrix.homeserver_url))
+		.post(&format!("{}{slash}_matrix/media/v3/upload", matrix.homeserver_url))
 		.query(&[("access_token", matrix.access_token.as_str()), ("filename", filename)])
 		.header("Content-Type", mimetype)
 		.body(data.to_owned()) //TODO check for better solution
